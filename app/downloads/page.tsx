@@ -13,14 +13,18 @@ import {
     ShieldCheck,
     ChevronRight,
     Activity,
-    BookOpen
+    BookOpen,
+    WifiOff,
+    Cloud
 } from 'lucide-react';
+import { useOffline } from '@/hooks/useOffline';
 
 export default function DownloadsPage() {
     const { user } = useAuthStore();
     const [downloadedItems, setDownloadedItems] = useState<CachedContent[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [viewingItem, setViewingItem] = useState<{ url: string; item: CachedContent } | null>(null);
+    const isOffline = useOffline();
 
     useEffect(() => {
         fetchDownloadedItems();
@@ -82,6 +86,16 @@ export default function DownloadsPage() {
                                 <p className="font-black text-slate-900 dark:text-white text-xl leading-none">{totalSize} <span className="text-xs text-slate-400">MB</span></p>
                             </div>
                         </motion.div>
+
+                        <div className={`px-4 py-2 rounded-2xl border flex items-center gap-3 transition-all duration-500 order-first md:order-last ${isOffline
+                                ? 'bg-amber-500/10 border-amber-500/20 text-amber-500'
+                                : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
+                            }`}>
+                            {isOffline ? <WifiOff size={14} /> : <Cloud size={14} />}
+                            <span className="text-[10px] font-black uppercase tracking-widest">
+                                {isOffline ? 'Offline Active' : 'Clinical Sync'}
+                            </span>
+                        </div>
                     </div>
                 </header>
 

@@ -43,13 +43,25 @@ export interface Note {
     updatedAt: string;
 }
 
+export interface FlashcardDeck {
+    $id: string;
+    userId: string;
+    title: string;
+    subject: string;
+    description?: string;
+    visibility?: 'public' | 'private';
+    createdAt: string;
+    updatedAt: string;
+}
+
 export interface Flashcard {
     $id: string;
-    question: string;
-    answer: string;
-    category: string;
-    program: Program;
-    mastered: boolean;
+    deckId: string;
+    front: string;
+    back: string;
+    nextReview?: string;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface Subscription {

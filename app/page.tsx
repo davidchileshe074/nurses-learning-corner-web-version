@@ -9,6 +9,7 @@ import { formatProgram, formatYear } from '@/lib/formatters';
 import { Subscription } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
     BookOpen,
@@ -32,8 +33,11 @@ import {
     Activity,
     Search,
     ArrowUpRight,
-    Bone
+    Bone,
+    WifiOff,
+    Cloud
 } from 'lucide-react';
+import { useOffline } from '@/hooks/useOffline';
 
 const MEDICAL_TERMS = [
     { term: 'Tachycardia', def: 'A heart rate that exceeds the normal resting rate, usually over 100 beats per minute.' },
@@ -137,6 +141,48 @@ const MEDICAL_TERMS = [
     { term: 'Triage', def: 'The assignment of degrees of urgency to wounds or illnesses to decide the order of treatment in a large number of patients or casualties.' }
 ];
 
+// Speed-optimized Skeleton Components
+const Skeleton = ({ className }: { className: string }) => (
+    <div className={`animate-pulse bg-slate-200 dark:bg-slate-800 rounded-2xl ${className}`} />
+);
+
+const DashboardSkeleton = () => (
+    <div className="bg-white dark:bg-slate-900/50 p-10 rounded-[40px] border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden h-[400px]">
+        <div className="flex flex-col md:flex-row justify-between gap-8 mb-12">
+            <div className="space-y-4">
+                <Skeleton className="w-32 h-3" />
+                <Skeleton className="w-64 h-12" />
+            </div>
+            <Skeleton className="w-24 h-24 rounded-full hidden md:block opacity-20" />
+        </div>
+        <div className="flex flex-wrap gap-10 pt-10 border-t border-slate-100 dark:border-slate-800">
+            {[1, 2, 3, 4].map(i => (
+                <div key={i} className="flex items-center gap-4">
+                    <Skeleton className="w-12 h-12 rounded-2xl" />
+                    <div className="space-y-2">
+                        <Skeleton className="w-16 h-2" />
+                        <Skeleton className="w-24 h-4" />
+                    </div>
+                </div>
+            ))}
+        </div>
+    </div>
+);
+
+const CardSkeleton = () => (
+    <div className="bg-white dark:bg-slate-900/50 p-8 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm shrink-0 min-w-[320px]">
+        <div className="flex items-center gap-4 mb-6">
+            <Skeleton className="w-12 h-12 rounded-2xl" />
+            <div className="space-y-2">
+                <Skeleton className="w-20 h-2" />
+                <Skeleton className="w-24 h-2" />
+            </div>
+        </div>
+        <Skeleton className="w-full h-6 mb-4" />
+        <Skeleton className="w-2/3 h-4" />
+    </div>
+);
+
 const getSubjectIcon = (subject: string): any => {
     const s = subject.toLowerCase();
     if (s.includes('anatomy')) return Bone;
@@ -181,6 +227,7 @@ export default function Home() {
     const [subscription, setSubscription] = useState<Subscription | null>(null);
     const [stats, setStats] = useState({ totalItems: 0, subjectsCount: 0 });
     const [hasUnread, setHasUnread] = useState(false);
+    const isOffline = useOffline();
 
     const fetchData = useCallback(async () => {
         if (!user) return;
@@ -249,300 +296,285 @@ export default function Home() {
 
     const firstName = profile?.name?.split(' ')[0] || user?.name?.split(' ')[0] || 'Nurse';
 
-    if (isLoading) {
-        return (
-            <div className="flex flex-col min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
-                <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-8"></div>
-                <p className="text-blue-400/60 dark:text-blue-500/40 font-black tracking-[5px] text-[10px] uppercase">Curating Excellence</p>
-            </div>
-        );
-    }
+    if (!user) return null;
 
     return (
-        <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-slate-950">
-            {/* Header */}
-            <header className="sticky top-0 z-40 bg-white/70 dark:bg-slate-950/70 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-6 py-6 transition-all duration-300">
-                <div className="max-w-7xl mx-auto flex items-center justify-between">
-                    <div>
-                        <p className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-[3px] mb-1">{getGreeting()}</p>
-                        <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">Hi, {firstName}.</h1>
-                    </div>
+        <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-slate-950 font-sans selection:bg-blue-600/20">
+            {/* Ultra-Clean Sticky Header */}
+            <header className="sticky top-0 z-50 bg-white/60 dark:bg-slate-950/60 backdrop-blur-2xl border-b border-slate-200/50 dark:border-slate-800/50 transition-all duration-300">
+                <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="flex items-center gap-4"
+                    >
+                        <div className="w-12 h-12 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center p-1.5 shadow-sm border border-slate-100 dark:border-slate-800">
+                            <Image src="/logo.svg" alt="NLC Logo" width={48} height={48} className="w-full h-full object-contain" />
+                        </div>
+                        <div>
+                            <h1 className="text-lg font-black text-slate-900 dark:text-white tracking-tighter leading-none">NURSE CORNER</h1>
+                            <p className="text-[11px] font-black text-blue-600 uppercase tracking-[3px] mt-1">Institutional Portal</p>
+                        </div>
+                    </motion.div>
+
                     <div className="flex items-center gap-4">
-                        <Link href="/profile" className="w-12 h-12 bg-white dark:bg-slate-900 flex items-center justify-center border border-slate-200 dark:border-slate-800 relative rounded-2xl shadow-sm hover:shadow-xl hover:border-blue-600/30 transition-all duration-300 group">
-                            <Stethoscope className="text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors" size={24} />
-                            {hasUnread && (
-                                <span className="absolute top-0 right-0 w-3 h-3 bg-blue-600 border-2 border-white dark:border-slate-950 rounded-full animate-bounce"></span>
-                            )}
-                        </Link>
-                        <button onClick={logout} className="p-3 text-slate-500 hover:text-red-500 transition-colors rounded-xl hover:bg-red-50 dark:hover:bg-red-950/20">
-                            <LogOut size={20} />
-                        </button>
+                        {/* Connectivity Indicator */}
+                        <div className={`px-3 py-1.5 rounded-full border flex items-center gap-2 transition-all duration-500 scale-90 sm:scale-100 ${isOffline
+                            ? 'bg-amber-500/10 border-amber-500/20 text-amber-500 animate-pulse'
+                            : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
+                            }`}>
+                            {isOffline ? <WifiOff size={12} strokeWidth={3} /> : <Cloud size={12} strokeWidth={3} />}
+                            <span className="text-[11px] font-black uppercase tracking-widest hidden md:block">
+                                {isOffline ? 'Offline Mode' : 'Clinical Sync'}
+                            </span>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                            <div className="hidden sm:block text-right mr-2">
+                                <p className="text-slate-500 dark:text-slate-500 text-[11px] font-black uppercase tracking-[2px]">{getGreeting()}</p>
+                                <p className="text-sm font-bold text-slate-900 dark:text-white tracking-tight italic">Officer {firstName}</p>
+                            </div>
+                            <Link href="/profile" className="w-11 h-11 bg-white dark:bg-slate-900 flex items-center justify-center border border-slate-200 dark:border-slate-800 relative rounded-xl shadow-sm hover:shadow-xl hover:border-blue-600/30 hover:scale-105 transition-all duration-300 group">
+                                <GraduationCap className="text-slate-700 dark:text-slate-300 group-hover:text-blue-600 transition-colors" size={20} />
+                                {hasUnread && (
+                                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-600 border-2 border-white dark:border-slate-950 rounded-full shadow-lg"></span>
+                                )}
+                            </Link>
+                            <button onClick={logout} className="w-11 h-11 flex items-center justify-center text-slate-400 hover:text-red-500 transition-all rounded-xl hover:bg-red-50 dark:hover:bg-red-950/20">
+                                <LogOut size={18} />
+                            </button>
+                        </div>
                     </div>
                 </div>
             </header>
 
-            <main className="flex-1 max-w-7xl mx-auto w-full px-6 py-10">
-                {/* Performance Dashboard Widget */}
-                <section className="mb-14">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="bg-slate-900 dark:bg-slate-900 p-8 sm:p-10 shadow-2xl rounded-[40px] overflow-hidden border border-slate-800/50 relative group"
-                    >
-                        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl -mr-20 -mt-20 group-hover:bg-blue-600/20 transition-all duration-500"></div>
-                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-600/5 rounded-full blur-3xl -ml-20 -mb-20"></div>
+            <main className="flex-1 max-w-7xl mx-auto w-full px-6 py-8">
+                {/* Dashboard Section */}
+                <section className="mb-12">
+                    {isLoading ? (
+                        <DashboardSkeleton />
+                    ) : (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-slate-900 p-8 sm:p-12 shadow-2xl rounded-[48px] overflow-hidden border border-slate-800/50 relative group"
+                        >
+                            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[120px] -mr-60 -mt-60 animate-pulse"></div>
+                            <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-600/5 rounded-full blur-[100px] -ml-40 -mb-40"></div>
 
-                        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12">
-                            <div className="max-w-xl">
-                                <span className="text-blue-400 dark:text-blue-500 font-black text-[9px] uppercase tracking-[4px] mb-4 block">Academic Program</span>
-                                <h2 className="text-white text-4xl sm:text-5xl font-black tracking-tighter leading-tight italic uppercase">
-                                    {profile?.program ? formatProgram(profile.program) : 'Curriculum Not Set'}
-                                </h2>
-                            </div>
-                            <ShieldCheck className="text-white/10 hidden md:block group-hover:text-blue-500/20 group-hover:scale-110 transition-all duration-500" size={100} strokeWidth={1} />
-                        </div>
-
-                        <div className="relative z-10 flex flex-wrap items-center gap-10 border-t border-white/5 pt-10">
-                            <div className="flex items-center gap-4 group/item">
-                                <div className="w-12 h-12 bg-white/10 flex items-center justify-center rounded-2xl group-hover/item:bg-blue-600/20 transition-colors">
-                                    <Clock className="text-white group-hover/item:text-blue-400" size={24} />
+                            <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
+                                <div className="max-w-xl">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <span className="px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full text-[11px] font-black text-blue-400 uppercase tracking-widest">Active License</span>
+                                        <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[11px] font-black text-slate-400 uppercase tracking-widest italic">{profile?.program ? formatProgram(profile.program) : 'Guest'}</span>
+                                    </div>
+                                    <h2 className="text-white text-4xl sm:text-6xl font-black tracking-tighter leading-none italic uppercase">
+                                        Clinical <br />
+                                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Excellence .</span>
+                                    </h2>
                                 </div>
-                                <div>
-                                    <p className="text-slate-400 font-black text-[8px] uppercase tracking-[2px] mb-1">Status</p>
-                                    <p className="text-white font-black text-sm uppercase tracking-tighter">
-                                        {daysRemaining !== null ? `${daysRemaining} Days Access` : 'Trial Access'}
+                                <ShieldCheck className="text-white/5 hidden lg:block group-hover:text-blue-500/20 group-hover:scale-110 transition-all duration-1000" size={120} strokeWidth={0.5} />
+                            </div>
+
+                            <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-8 border-t border-white/5 pt-10">
+                                <div className="space-y-1">
+                                    <p className="text-slate-500 font-black text-[11px] uppercase tracking-[3px]">Retention</p>
+                                    <p className="text-white font-black text-2xl tracking-tighter italic">
+                                        {daysRemaining !== null ? `${daysRemaining}d` : 'TRIAL'}
+                                    </p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-slate-500 font-black text-[11px] uppercase tracking-[3px]">Resources</p>
+                                    <p className="text-blue-400 font-black text-2xl tracking-tighter italic">{stats.totalItems}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-slate-500 font-black text-[11px] uppercase tracking-[3px]">Modules</p>
+                                    <p className="text-indigo-400 font-black text-2xl tracking-tighter italic">{stats.subjectsCount}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-slate-500 font-black text-[11px] uppercase tracking-[3px]">Phase</p>
+                                    <p className="text-purple-400 font-black text-2xl tracking-tighter italic">
+                                        {profile?.yearOfStudy ? formatYear(profile.yearOfStudy).split(' ')[0] : 'N/A'}
                                     </p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-4 group/item">
-                                <div className="w-12 h-12 bg-white/10 flex items-center justify-center rounded-2xl group-hover/item:bg-indigo-600/20 transition-colors">
-                                    <Layers className="text-white group-hover/item:text-indigo-400" size={24} />
-                                </div>
-                                <div>
-                                    <p className="text-slate-400 font-black text-[8px] uppercase tracking-[2px] mb-1">Density</p>
-                                    <p className="text-blue-400 font-black text-sm uppercase tracking-tighter">{stats.totalItems} Resources</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-4 group/item">
-                                <div className="w-12 h-12 bg-white/10 flex items-center justify-center rounded-2xl group-hover/item:bg-purple-600/20 transition-colors">
-                                    <Sparkles className="text-white group-hover/item:text-purple-400" size={24} />
-                                </div>
-                                <div>
-                                    <p className="text-slate-400 font-black text-[8px] uppercase tracking-[2px] mb-1">Subjects</p>
-                                    <p className="text-blue-400 font-black text-sm uppercase tracking-tighter">{stats.subjectsCount} Modules</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-4 group/item">
-                                <div className="w-12 h-12 bg-white/10 flex items-center justify-center rounded-2xl group-hover/item:bg-emerald-600/20 transition-colors">
-                                    <GraduationCap className="text-white group-hover/item:text-emerald-400" size={24} />
-                                </div>
-                                <div>
-                                    <p className="text-slate-400 font-black text-[8px] uppercase tracking-[2px] mb-1">Phase</p>
-                                    <p className="text-blue-400 font-black text-sm uppercase tracking-tighter">
-                                        {profile?.yearOfStudy ? formatYear(profile.yearOfStudy) : 'Not Specified'}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </motion.div>
+                        </motion.div>
+                    )}
                 </section>
 
-                {/* Recent Materials Slider */}
-                {/* Study Continuity (Recents) */}
-                {activities.length > 0 && (
-                    <section className="mb-14 overflow-hidden">
-                        <div className="flex items-end justify-between mb-8 px-1">
-                            <div>
-                                <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase italic leading-none">Study <span className="text-blue-600">Continuity .</span></h3>
-                                <p className="text-slate-400 dark:text-slate-500 text-[10px] font-black mt-2 uppercase tracking-[3px] leading-none">Pick up where you left off</p>
-                            </div>
-                            <Link href="/library" className="group flex items-center gap-2 text-blue-600 font-black text-[10px] uppercase tracking-widest hover:text-blue-700 transition-colors">
-                                View Vault
-                                <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                            </Link>
+                {/* Study Continuity */}
+                <section className="mb-14">
+                    <div className="flex items-end justify-between mb-8">
+                        <div>
+                            <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase italic leading-none">Continuity <span className="text-blue-600">.</span></h3>
+                            <p className="text-slate-500 dark:text-slate-500 text-[11px] font-black mt-2 uppercase tracking-[4px]">Recent Activity Repository</p>
                         </div>
+                        <Link href="/library" className="group flex items-center gap-2 text-blue-600 font-black text-[11px] uppercase tracking-widest hover:text-blue-700 transition-colors">
+                            The Vault
+                            <ArrowUpRight size={14} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                        </Link>
+                    </div>
 
-                        <div className="flex gap-6 overflow-x-auto pb-8 custom-scrollbar scroll-smooth -mx-6 px-6 no-scrollbar">
-                            {activities.map((activity, index) => {
+                    <div className="flex gap-6 overflow-x-auto pb-6 scroll-smooth -mx-6 px-6">
+                        {isLoading ? (
+                            [1, 2, 3].map(i => <CardSkeleton key={i} />)
+                        ) : activities.length > 0 ? (
+                            activities.map((activity, index) => {
                                 const Icon = activity.type === 'pdf' ? FileText : Layers;
                                 return (
                                     <motion.div
                                         key={activity.$id}
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: index * 0.1 }}
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ delay: index * 0.05 }}
                                         onClick={() => router.push(`/library/${activity.contentId}`)}
-                                        className="min-w-[320px] max-w-[320px] bg-white dark:bg-slate-900 p-8 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-2xl hover:border-blue-600/30 transition-all cursor-pointer group relative overflow-hidden shrink-0"
+                                        className="min-w-[340px] bg-white dark:bg-slate-900 p-8 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-2xl hover:border-blue-600/30 transition-all cursor-pointer group relative overflow-hidden"
                                     >
                                         <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 rounded-full -mr-16 -mt-16 group-hover:bg-blue-600/10 transition-colors duration-500"></div>
-
-                                        <div className="flex items-center gap-4 mb-6 relative z-10">
-                                            <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/40 rounded-2xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-lg shadow-blue-500/10 duration-300">
-                                                <Icon size={24} />
+                                        <div className="flex items-center gap-4 mb-6">
+                                            <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                                                <Icon size={22} />
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-0.5 truncate">{activity.subject}</p>
-                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">{getTimeAgo(activity.timestamp)}</p>
+                                                <p className="text-[11px] font-black text-blue-600 uppercase tracking-widest mb-0.5">{activity.subject}</p>
+                                                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none">{getTimeAgo(activity.timestamp)}</p>
                                             </div>
                                         </div>
-
-                                        <h4 className="text-slate-900 dark:text-white font-black text-lg uppercase tracking-tight italic leading-tight group-hover:text-blue-600 transition-colors relative z-10 mb-2 truncate">
-                                            {activity.title}
-                                        </h4>
-                                        <div className="flex items-center gap-2 text-slate-400 mt-6 relative z-10">
-                                            <div className="flex-1 h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                                <div className="h-full bg-blue-600 w-2/3 rounded-full animate-pulse"></div>
-                                            </div>
-                                            <span className="text-[9px] font-black uppercase tracking-widest shrink-0">Resume Prep</span>
+                                        <h4 className="text-slate-900 dark:text-white font-black text-xl tracking-tighter italic leading-tight group-hover:text-blue-600 transition-colors mb-4 line-clamp-1">{activity.title}</h4>
+                                        <div className="w-full h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                            <div className="h-full bg-blue-600 w-1/2 rounded-full shadow-[0_0_8px_rgba(37,99,235,0.4)] animate-pulse"></div>
                                         </div>
                                     </motion.div>
                                 );
-                            })}
-                        </div>
-                    </section>
-                )}
+                            })
+                        ) : (
+                            <div className="w-full py-12 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[40px] bg-white/30">
+                                <p className="text-slate-500 font-black text-[11px] uppercase tracking-widest">No recent repository found</p>
+                            </div>
+                        )}
+                    </div>
+                </section>
 
                 {/* Revision Center */}
                 <section className="mb-14">
                     <div className="mb-8">
                         <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase italic">Revision Center</h3>
-                        <p className="text-slate-400 dark:text-slate-500 text-[10px] font-black mt-1 uppercase tracking-widest leading-none">Master Your Concepts</p>
+                        <p className="text-slate-500 dark:text-slate-500 text-[11px] font-black mt-1 uppercase tracking-widest">Expert Logic Systems</p>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <Link href="/flashcards" className="group bg-gradient-to-br from-white to-amber-50/50 dark:from-slate-900 dark:to-amber-900/5 p-8 rounded-[40px] border border-amber-100 dark:border-amber-900/30 shadow-sm hover:shadow-2xl hover:border-amber-600/30 transition-all">
-                            <div className="w-14 h-14 bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center rounded-2xl mb-6 shadow-xl shadow-amber-500/10 group-hover:scale-110 group-hover:bg-amber-600 transition-all duration-300">
-                                <Layers className="text-amber-600 group-hover:text-white transition-colors" size={28} />
-                            </div>
-                            <h4 className="text-slate-900 dark:text-white font-black text-xl mb-1 italic uppercase tracking-tighter">Flashcards</h4>
-                            <p className="text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase tracking-[2px]">Anatomy Revision</p>
-                        </Link>
-
-                        <Link href="/notebook" className="group bg-gradient-to-br from-white to-emerald-50/50 dark:from-slate-900 dark:to-emerald-900/5 p-8 rounded-[40px] border border-emerald-100 dark:border-emerald-900/30 shadow-sm hover:shadow-2xl hover:border-emerald-600/30 transition-all">
-                            <div className="w-14 h-14 bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center rounded-2xl mb-6 shadow-xl shadow-emerald-500/10 group-hover:scale-110 group-hover:bg-emerald-600 transition-all duration-300">
-                                <PenTool className="text-emerald-600 group-hover:text-white transition-colors" size={28} />
-                            </div>
-                            <h4 className="text-slate-900 dark:text-white font-black text-xl mb-1 italic uppercase tracking-tighter">Notebook</h4>
-                            <p className="text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-[2px]">Clinical Observations</p>
-                        </Link>
-
-                        <Link href="/library" className="group bg-gradient-to-br from-white to-blue-50/50 dark:from-slate-900 dark:to-blue-900/5 p-8 rounded-[40px] border border-blue-100 dark:border-blue-900/30 shadow-sm hover:shadow-2xl hover:border-blue-600/30 transition-all">
-                            <div className="w-14 h-14 bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center rounded-2xl mb-6 shadow-xl shadow-blue-500/10 group-hover:scale-110 group-hover:bg-blue-600 transition-all duration-300">
-                                <BookOpen className="text-blue-600 group-hover:text-white transition-colors" size={28} />
-                            </div>
-                            <h4 className="text-slate-900 dark:text-white font-black text-xl mb-1 italic uppercase tracking-tighter">Library</h4>
-                            <p className="text-blue-600 dark:text-blue-400 text-[10px] font-black uppercase tracking-[2px]">E-books & Manuals</p>
-                        </Link>
-
-                        <Link href="/support" className="group bg-gradient-to-br from-white to-slate-100/50 dark:from-slate-900 dark:to-slate-800/10 p-8 rounded-[40px] border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-2xl hover:border-slate-400/30 transition-all">
-                            <div className="w-14 h-14 bg-slate-100 dark:bg-slate-800 flex items-center justify-center rounded-2xl mb-6 shadow-xl shadow-slate-500/10 group-hover:scale-110 group-hover:bg-slate-900 transition-all duration-300">
-                                <Stethoscope className="text-slate-600 group-hover:text-white transition-colors" size={28} />
-                            </div>
-                            <h4 className="text-slate-900 dark:text-white font-black text-xl mb-1 italic uppercase tracking-tighter">Support</h4>
-                            <p className="text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-[2px]">Help Center</p>
-                        </Link>
+                        {[
+                            { title: 'Flashcards', sub: 'Logic Training', icon: Layers, href: '/flashcards', color: 'amber' },
+                            { title: 'Notebook', sub: 'Clinical Observations', icon: PenTool, href: '/notebook', color: 'emerald' },
+                            { title: 'Library', sub: 'Archival Data', icon: BookOpen, href: '/library', color: 'blue' },
+                            { title: 'Support', sub: 'Systems Help', icon: Stethoscope, href: '/support', color: 'slate' }
+                        ].map((item, i) => (
+                            <Link key={i} href={item.href} className={`group bg-white dark:bg-slate-900 p-8 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-2xl hover:border-blue-600/30 transition-all`}>
+                                <div className="w-14 h-14 bg-slate-50 dark:bg-slate-800 flex items-center justify-center rounded-2xl mb-6 group-hover:bg-blue-600 group-hover:scale-110 transition-all duration-300">
+                                    <item.icon className="text-slate-400 group-hover:text-white transition-colors" size={26} />
+                                </div>
+                                <h4 className="text-slate-900 dark:text-white font-black text-2xl italic uppercase tracking-tighter">{item.title}</h4>
+                                <p className="text-blue-600 dark:text-blue-400 text-[11px] font-black uppercase tracking-widest mt-1">{item.sub}</p>
+                            </Link>
+                        ))}
                     </div>
                 </section>
 
-                {/* Main Curriculum Grid */}
-                <section className="mb-14">
+                {/* Curriculum Modules */}
+                <section className="mb-12">
                     <div className="flex items-end justify-between mb-10">
                         <div>
-                            <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase italic">Main Curriculum</h3>
-                            <p className="text-slate-400 dark:text-slate-500 text-[10px] font-black mt-1 uppercase tracking-widest leading-none">Architectural Modules</p>
+                            <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase italic">Curriculum</h3>
+                            <p className="text-slate-500 dark:text-slate-500 text-[11px] font-black mt-1 uppercase tracking-widest">Specialized Medical Modules</p>
                         </div>
                     </div>
 
-                    {subjects.length > 0 ? (
+                    {isLoading ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                            {[1, 2, 3, 4].map(i => <CardSkeleton key={i} />)}
+                        </div>
+                    ) : subjects.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                             {subjects.map((subject, index) => {
                                 const Icon = getSubjectIcon(subject);
                                 return (
                                     <motion.div
                                         key={index}
-                                        whileHover={{ y: -8 }}
+                                        whileHover={{ y: -10, scale: 1.02 }}
                                         onClick={() => router.push(`/library?subject=${subject}`)}
-                                        className="bg-white dark:bg-slate-900 p-8 rounded-[45px] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-3xl hover:border-blue-600/40 transition-all duration-500 cursor-pointer group relative overflow-hidden"
+                                        className="bg-white dark:bg-slate-900 p-10 rounded-[48px] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-3xl hover:border-blue-600/40 transition-all duration-500 cursor-pointer group relative overflow-hidden"
                                     >
-                                        <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-blue-600/5 rounded-full group-hover:bg-blue-600/10 transition-colors duration-500"></div>
-
-                                        <div className="flex justify-between items-start mb-8 relative z-10">
-                                            <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center rounded-2xl border border-blue-100 dark:border-blue-800 group-hover:bg-blue-600 group-hover:scale-110 transition-all duration-500 shadow-lg shadow-blue-500/5">
+                                        <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-blue-600/5 rounded-full group-hover:bg-blue-600/10 transition-colors duration-500"></div>
+                                        <div className="flex justify-between items-start mb-10">
+                                            <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center rounded-2xl border border-blue-100 dark:border-blue-800 group-hover:bg-blue-600 group-hover:scale-110 transition-all duration-500">
                                                 <Icon className="text-blue-600 group-hover:text-white transition-colors" size={32} />
                                             </div>
-                                            <div className="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center group-hover:bg-blue-600 transition-all duration-500">
-                                                <ArrowUpRight className="text-slate-300 group-hover:text-white transition-colors" size={20} />
-                                            </div>
+                                            <ArrowUpRight className="text-slate-200 group-hover:text-blue-600 transition-colors" size={24} />
                                         </div>
-
-                                        <h4 className="text-slate-900 dark:text-white font-black text-xl uppercase tracking-tighter leading-none mb-6 group-hover:text-blue-600 transition-colors relative z-10">{subject}</h4>
-
-                                        <div className="flex items-center gap-2 relative z-10">
-                                            <div className="flex-1 h-2 bg-blue-50 dark:bg-blue-950 rounded-full overflow-hidden">
+                                        <h4 className="text-slate-900 dark:text-white font-black text-2xl uppercase tracking-tighter leading-none mb-8 group-hover:text-blue-600 transition-colors">{subject}</h4>
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex-1 h-3 bg-slate-50 dark:bg-slate-800 rounded-full overflow-hidden">
                                                 <motion.div
                                                     initial={{ width: 0 }}
-                                                    whileInView={{ width: '40%' }}
+                                                    whileInView={{ width: '65%' }}
                                                     transition={{ duration: 1.5, ease: "easeOut" }}
                                                     className="h-full bg-gradient-to-r from-blue-600 to-indigo-600"
                                                 ></motion.div>
                                             </div>
-                                            <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Ongoing</span>
+                                            <span className="text-[11px] font-black text-blue-600 uppercase tracking-widest">Active</span>
                                         </div>
                                     </motion.div>
                                 );
                             })}
                         </div>
                     ) : (
-                        <div className="col-span-full py-24 text-center bg-white dark:bg-slate-900 rounded-[50px] border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden group">
-                            <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-transparent dark:from-blue-950/10 dark:to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-                            <div className="w-24 h-24 bg-slate-50 dark:bg-slate-800 flex items-center justify-center rounded-[30px] mx-auto mb-8 shadow-xl relative z-10">
-                                <Search className="text-slate-300" size={48} />
+                        <div className="py-24 text-center bg-white dark:bg-slate-900 rounded-[48px] border border-slate-100 dark:border-slate-800 shadow-sm group">
+                            <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 flex items-center justify-center rounded-3xl mx-auto mb-8 transition-transform group-hover:scale-110">
+                                <Search className="text-slate-300" size={32} />
                             </div>
-                            <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic relative z-10">Architecting Curriculum</h3>
-                            <p className="text-slate-400 font-medium text-base mt-4 uppercase tracking-widest max-w-sm mx-auto px-6 relative z-10 leading-loose">Our academic team is curating high-fidelity modules for your profile.</p>
+                            <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic">No Modules Found</h3>
+                            <p className="text-slate-400 font-medium text-sm mt-2 uppercase tracking-[3px] max-w-xs mx-auto">Update your profile program to view curriculum</p>
                         </div>
                     )}
                 </section>
 
-                {/* Medical Term of the Day */}
+                {/* Term of the Day - Premium Design */}
                 <section>
                     <motion.div
-                        initial={{ opacity: 0, y: 30 }}
-                        whileInView={{ opacity: 1, y: 0 }}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
                         viewport={{ once: true }}
-                        transition={{ duration: 0.8 }}
-                        className="bg-slate-900 p-12 sm:p-20 rounded-[60px] overflow-hidden relative shadow-3xl group"
+                        className="bg-slate-900 p-12 sm:p-24 rounded-[64px] overflow-hidden relative shadow-3xl group border border-white/5"
                     >
-                        <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(37,99,235,0.05)_1px,transparent_1px),linear-gradient(-45deg,rgba(37,99,235,0.05)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
-                        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[100px] -mr-40 -mt-40 group-hover:bg-blue-600/20 transition-colors duration-1000"></div>
-                        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-600/5 rounded-full blur-[100px] -ml-40 -mb-40"></div>
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(37,99,235,0.15),transparent)]"></div>
+                        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[120px] -mr-40 -mt-40 group-hover:bg-blue-600/20 transition-all duration-1000"></div>
 
-                        <div className="relative z-10 max-w-3xl">
-                            <div className="inline-flex items-center gap-3 px-6 py-3 bg-white/5 backdrop-blur-2xl rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] mb-10 text-blue-400 border border-white/10 shadow-2xl">
-                                <Sparkles className="animate-pulse" size={16} />
-                                Daily Clinical Insight
+                        <div className="relative z-10 max-w-4xl">
+                            <div className="inline-flex items-center gap-3 px-5 py-2.5 bg-white/5 backdrop-blur-2xl rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] mb-12 text-blue-400 border border-white/10">
+                                <Sparkles className="animate-pulse" size={14} />
+                                Word of the Day
                             </div>
-                            <h2 className="text-white text-5xl sm:text-7xl font-black mb-10 tracking-tighter italic uppercase leading-none group-hover:text-blue-400 transition-colors duration-500">
+                            <h2 className="text-white text-5xl sm:text-8xl font-black mb-12 tracking-tighter italic uppercase leading-none">
                                 &quot;{dailyTerm.term}&quot;
                             </h2>
-                            <p className="text-blue-100/70 font-medium text-xl sm:text-2xl leading-relaxed mb-14 tracking-tight">
+                            <p className="text-blue-100/70 font-medium text-xl sm:text-3xl leading-relaxed mb-16 tracking-tight max-w-3xl">
                                 {dailyTerm.def}
                             </p>
-                            <button className="px-12 py-6 bg-blue-600 hover:bg-white hover:text-blue-600 text-white rounded-3xl font-black uppercase text-xs tracking-[0.2em] shadow-2xl shadow-blue-600/40 transition-all duration-500 active:scale-95 group/btn flex items-center gap-4">
-                                Explore Terminology
-                                <ChevronRight className="group-hover/btn:translate-x-2 transition-transform duration-500" size={20} />
+                            <button className="px-10 py-5 bg-blue-600 hover:bg-white hover:text-blue-600 text-white rounded-[24px] font-black uppercase text-[11px] tracking-[0.2em] shadow-2xl shadow-blue-600/40 transition-all duration-500 active:scale-95 flex items-center gap-4">
+                                Repository Entry
+                                <ChevronRight size={18} />
                             </button>
                         </div>
 
-                        <Activity className="absolute bottom-10 right-10 text-white/5 group-hover:text-blue-500/10 group-hover:scale-110 transition-all duration-1000" size={300} strokeWidth={0.5} />
+                        <Activity className="absolute bottom-10 right-10 text-white/5 group-hover:text-blue-500/10 group-hover:scale-105 transition-all duration-1000" size={320} strokeWidth={0.2} />
                     </motion.div>
                 </section>
             </main>
 
-            {/* Custom Background Elements */}
-            <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/5 rounded-full blur-[120px]"></div>
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-500/5 rounded-full blur-[120px]"></div>
+            {/* Premium Background Grain & Blobs */}
+            <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden opacity-30">
+                <div className="absolute top-[10%] left-[5%] w-[40%] h-[40%] bg-blue-400/10 rounded-full blur-[140px] animate-pulse"></div>
+                <div className="absolute bottom-[10%] right-[5%] w-[40%] h-[40%] bg-indigo-400/10 rounded-full blur-[140px] animate-pulse" style={{ animationDelay: '1s' }}></div>
             </div>
         </div>
     );

@@ -62,12 +62,11 @@ function ResetPasswordForm() {
                     <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-600 to-indigo-600"></div>
 
                     <header className="mb-12">
-                        <div className="flex items-center gap-2 mb-4">
-                            <Activity size={16} className="text-blue-600 animate-pulse" />
-                            <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.4em]">Credential Restoration Module</span>
+                        <div className="w-20 h-20 bg-white dark:bg-slate-900 rounded-[2rem] flex items-center justify-center p-3 shadow-lg border border-slate-100 dark:border-slate-800 mb-8">
+                            <img src="/logo.svg" alt="NLC Logo" className="w-full h-full object-contain" />
                         </div>
-                        <h1 className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic leading-none">
-                            Reset <span className="text-blue-600 italic">.</span>
+                        <h1 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic leading-none">
+                            Reset Access
                         </h1>
                         <p className="text-slate-400 font-medium text-lg mt-4">Provision new secure access credentials.</p>
                     </header>

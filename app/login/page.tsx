@@ -49,14 +49,13 @@ export default function LoginPage() {
                     <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600"></div>
 
                     <header className="mb-14">
-                        <div className="flex items-center gap-2 mb-6">
-                            <Activity size={18} className="text-blue-600 animate-pulse" />
-                            <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.4em]">Sign In</span>
+                        <div className="w-20 h-20 bg-white dark:bg-slate-900 rounded-[2rem] flex items-center justify-center p-3 shadow-lg border border-slate-100 dark:border-slate-800 mb-8">
+                            <img src="/logo.svg" alt="NLC Logo" className="w-full h-full object-contain" />
                         </div>
-                        <h1 className="text-5xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tighter mb-4 italic leading-none">
-                            Nurse Learning
+                        <h1 className="text-5xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tighter mb-4 italic leading-none uppercase">
+                            Nurse Corner
                         </h1>
-                        <p className="text-slate-400 font-medium text-lg mt-2 leading-relaxed">Your companion in excellence</p>
+                        <p className="text-slate-400 font-medium text-lg mt-2 leading-relaxed">Your expert companion in excellence</p>
                     </header>
 
                     {error && (

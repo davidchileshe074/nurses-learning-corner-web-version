@@ -14,6 +14,7 @@ import {
     ChevronRight
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 const NAV_ITEMS = [
     { href: '/', label: 'Home', icon: Home },
@@ -90,20 +91,21 @@ export function Navigation() {
             >
                 <div className="flex flex-col h-full p-4">
                     {/* Logo Section */}
-                    <div className="flex items-center gap-3 px-3 py-6 mb-8">
-                        <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20 shrink-0">
-                            <Library className="text-white" size={20} />
+                    <div className="flex items-center gap-3 px-3 py-6 mb-8 group cursor-pointer" onClick={() => (window.location.href = '/')}>
+                        <div className="w-11 h-11 bg-white dark:bg-slate-950 rounded-xl flex items-center justify-center p-1.5 shadow-sm border border-slate-100 dark:border-slate-800 transition-transform group-hover:scale-110">
+                            <Image src="/logo.svg" alt="NLC Logo" width={44} height={44} className="w-full h-full object-contain" />
                         </div>
                         <AnimatePresence>
                             {isSidebarOpen && (
-                                <motion.span
+                                <motion.div
                                     initial={{ opacity: 0, x: -10 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: -10 }}
-                                    className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tighter whitespace-nowrap"
+                                    className="flex flex-col"
                                 >
-                                    Nurse Corner
-                                </motion.span>
+                                    <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">Nurse Corner</span>
+                                    <span className="text-[7px] font-black text-blue-600 uppercase tracking-widest mt-0.5">Clinical Portal</span>
+                                </motion.div>
                             )}
                         </AnimatePresence>
                     </div>
@@ -118,8 +120,8 @@ export function Navigation() {
                                     key={item.href}
                                     href={item.href}
                                     className={`flex items-center gap-4 px-3 py-3 rounded-2xl transition-all group ${isActive
-                                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-                                            : 'text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'
+                                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                                        : 'text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'
                                         }`}
                                 >
                                     <div className="shrink-0">

@@ -68,6 +68,7 @@ export const accessCodeServices = {
             // Multi-device synchronization: Handle same-account re-entry
             if (accessCode.isUsed) {
                 if (accessCode.usedByUserId === userId) {
+                    await this._syncProfileStatus(userId);
                     return {
                         success: true,
                         message: `Clinical access is already active on your profile. State synchronized successfully.`,
@@ -144,21 +145,61 @@ export const accessCodeServices = {
                 }
             );
 
-            // 5. Trigger System Notification
+            // 5. Sync Profile Status
+            const profResponse = await databases.listDocuments(
+                config.databaseId,
+                config.profilesCollectionId,
+                [Query.equal('userId', userId)]
+            );
+
+            if (profResponse.documents.length > 0) {
+                await databases.updateDocument(
+                    config.databaseId,
+                    config.profilesCollectionId,
+                    profResponse.documents[0].$id,
+                    {
+                        subscriptionStatus: 'active',
+                        updatedAt: now.toISOString()
+                    }
+                );
+            }
+
+            // 6. Trigger System Notification
             await notificationServices.addNotification(userId, {
-                title: 'Membership Activated',
-                message: `Your clinical credentials have been synchronized. ${accessCode.durationDays} days of access added to your profile. 🩺`,
+                title: 'Premium Activated',
+                message: `Your account has been upgraded. ${accessCode.durationDays} days of premium access added. 🎓`,
                 type: 'subscription'
             });
 
             return {
                 success: true,
-                message: `Clinical access granted. Your ${accessCode.plan || 'Premium'} membership has been synchronized.`,
+                message: `Success! Your ${accessCode.plan || 'Premium'} membership is now active.`,
                 durationDays: accessCode.durationDays
             };
         } catch (error: any) {
             console.error('[AccessCode] Redemption failure:', error.message);
             throw new Error(error.message || 'The secure redemption sequence was interrupted. Please check your connectivity.');
+        }
+    },
+
+    async _syncProfileStatus(userId: string): Promise<void> {
+        const now = new Date().toISOString();
+        const profResponse = await databases.listDocuments(
+            config.databaseId,
+            config.profilesCollectionId,
+            [Query.equal('userId', userId)]
+        );
+
+        if (profResponse.documents.length > 0) {
+            await databases.updateDocument(
+                config.databaseId,
+                config.profilesCollectionId,
+                profResponse.documents[0].$id,
+                {
+                    subscriptionStatus: 'active',
+                    updatedAt: now
+                }
+            );
         }
     }
 };

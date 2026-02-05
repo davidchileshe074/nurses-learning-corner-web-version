@@ -11,6 +11,7 @@ interface AuthState {
     error: string | null;
     checkSession: () => Promise<void>;
     logout: () => Promise<void>;
+    refreshProfile: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -57,4 +58,23 @@ export const useAuthStore = create<AuthState>((set) => ({
             set({ error: err.message });
         }
     },
+
+    refreshProfile: async () => {
+        const user = useAuthStore.getState().user;
+        if (!user) return;
+
+        try {
+            const response = await databases.listDocuments(
+                config.databaseId,
+                config.profilesCollectionId,
+                [Query.equal("userId", user.$id)]
+            );
+
+            if (response.documents.length > 0) {
+                set({ profile: response.documents[0] as unknown as Profile });
+            }
+        } catch (err) {
+            console.error('Error refreshing profile:', err);
+        }
+    }
 }));

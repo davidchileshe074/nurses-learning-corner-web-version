@@ -7,7 +7,17 @@ import { storage, config } from '@/lib/appwrite';
 import { db } from '@/lib/db';
 import { useAuthStore } from '@/hooks/useAuthStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PDFViewer } from '@/components/PDFViewer';
+import dynamic from 'next/dynamic';
+
+const PDFViewer = dynamic(() => import('@/components/PDFViewer').then(mod => mod.PDFViewer), {
+    loading: () => (
+        <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
+            <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Loading Reader Engine...</p>
+        </div>
+    ),
+    ssr: false
+});
 import { noteServices } from '@/services/notes';
 import { subscriptionServices } from '@/services/subscription';
 import { useRouter } from 'next/navigation';

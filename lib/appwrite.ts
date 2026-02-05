@@ -12,6 +12,7 @@ export const config = {
   accessCodesCollectionId: process.env.NEXT_PUBLIC_COL_ACCESS_CODES!,
   notificationsCollectionId: process.env.NEXT_PUBLIC_COL_NOTIFICATIONS || 'notifications',
   flashcardsCollectionId: process.env.NEXT_PUBLIC_COL_FLASHCARDS || 'flashcards',
+  flashcardDecksCollectionId: process.env.NEXT_PUBLIC_COL_FLASHCARD_DECKS || 'flashcard_decks',
   recentActivityCollectionId: process.env.NEXT_PUBLIC_COL_RECENT_ACTIVITY || 'recent_activity',
   notesCollectionId: process.env.NEXT_PUBLIC_COL_NOTES || 'notes',
 };
