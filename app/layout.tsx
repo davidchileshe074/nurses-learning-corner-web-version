@@ -27,6 +27,8 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
+import { Navigation } from "@/components/Navigation";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -40,8 +42,16 @@ export default function RootLayout({
       </head>
       <body
         className={`${plusJakartaSans.variable} font-sans antialiased h-full bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-50`}
+        suppressHydrationWarning={true}
       >
-        <AuthGuard>{children}</AuthGuard>
+        <AuthGuard>
+          <div className="flex min-h-screen">
+            <Navigation />
+            <main className="flex-1 overflow-x-hidden md:pb-0 pb-24">
+              {children}
+            </main>
+          </div>
+        </AuthGuard>
       </body>
     </html>
   );

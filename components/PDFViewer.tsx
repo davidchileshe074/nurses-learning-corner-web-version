@@ -9,7 +9,7 @@ import { noteServices } from '@/services/notes';
 import { NoteEditor } from './NoteEditor';
 
 // Set worker for react-pdf
-pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 interface PDFViewerProps {
     url: string;
@@ -39,11 +39,8 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
 
     const saveProgress = async (pageNum: number) => {
         try {
-            await noteServices.upsertNote({
-                userId,
-                contentId,
-                lastPosition: pageNum
-            });
+            const { downloadServices } = await import('@/services/download');
+            await downloadServices.saveReadingProgress(contentId, pageNum);
         } catch (error) {
             console.error('Failed to save reading progress:', error);
         }
@@ -126,7 +123,7 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
             {/* Main Layout (Split) */}
             <div className="flex-1 flex overflow-hidden">
                 {/* PDF Area */}
-                <div className={`flex-1 overflow-y-auto bg-slate-950 p-4 sm:p-6 flex flex-col items-center custom-scrollbar transition-all duration-500 ${showNotes ? 'lg:border-r lg:border-slate-800' : ''}`}>
+                <div className={`flex-1 overflow-auto bg-slate-950 p-4 sm:p-8 flex flex-col items-center custom-scrollbar transition-all duration-500 ${showNotes ? 'lg:border-r lg:border-slate-800' : ''}`}>
                     <Document
                         file={url}
                         onLoadSuccess={onDocumentLoadSuccess}
@@ -137,14 +134,15 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
                                 <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Preparing Scientific Assets...</p>
                             </div>
                         }
-                        className="shadow-2xl shadow-black/80"
+                        className="shadow-2xl shadow-black/80 flex flex-col items-center min-h-full"
                     >
                         <Page
                             pageNumber={pageNumber}
-                            scale={showNotes ? scale * 0.8 : scale}
+                            scale={showNotes ? scale * 0.75 : scale}
+                            width={typeof window !== 'undefined' ? Math.min(window.innerWidth * 0.9, 1200) : undefined}
                             renderAnnotationLayer={true}
                             renderTextLayer={true}
-                            className="rounded-lg overflow-hidden"
+                            className="rounded-lg overflow-hidden !bg-slate-900"
                         />
                     </Document>
                 </div>

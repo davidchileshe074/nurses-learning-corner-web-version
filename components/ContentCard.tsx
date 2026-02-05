@@ -1,14 +1,24 @@
-'use client';
-
+"use client"
 import { Content } from '@/types';
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/db';
+import {
+    FileText,
+    Link as LinkIcon,
+    DownloadCloud,
+    CheckCircle2,
+    MoreHorizontal,
+    Sparkles,
+    Zap,
+    Download,
+    Check
+} from 'lucide-react';
 
 interface ContentCardProps {
     content: Content;
     onPress: (content: Content) => void;
-    onDownload: (content: Content) => void;
+    onDownload?: (content: Content) => void;
 }
 
 export function ContentCard({ content, onPress, onDownload }: ContentCardProps) {
@@ -22,68 +32,74 @@ export function ContentCard({ content, onPress, onDownload }: ContentCardProps) 
         checkStatus();
     }, [content.$id]);
 
+    const isPDF = content.type?.toLowerCase().includes('pdf');
+
     return (
         <motion.div
-            whileHover={{ y: -8, transition: { duration: 0.2 } }}
+            layout
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            whileHover={{ y: -10, transition: { duration: 0.3, ease: "easeOut" } }}
             onClick={() => onPress(content)}
-            className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 p-4 shadow-sm hover:shadow-2xl hover:shadow-blue-600/10 transition-all cursor-pointer relative overflow-hidden"
+            className="group bg-white dark:bg-slate-900 rounded-[40px] border border-slate-100 dark:border-slate-800 p-6 shadow-sm hover:shadow-[0_40px_80px_-20px_rgba(37,99,235,0.15)] transition-all cursor-pointer relative overflow-hidden"
         >
-            <div className="aspect-[3/4] bg-slate-100 dark:bg-slate-800 rounded-2xl mb-4 overflow-hidden relative">
-                <div className="absolute inset-0 flex items-center justify-center">
-                    {content.type === 'pdf' ? (
-                        <svg className="w-16 h-16 text-slate-300 dark:text-slate-700" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
-                        </svg>
-                    ) : content.type === 'video' ? (
-                        <svg className="w-16 h-16 text-slate-300 dark:text-slate-700" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M10 8v8l5-4-5-4zm9-5H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z" />
-                        </svg>
+            {/* Visual Header / Cover */}
+            <div className="aspect-[4/3] bg-slate-50 dark:bg-slate-800/50 rounded-[30px] mb-6 overflow-hidden relative group-hover:shadow-inner transition-all border border-transparent group-hover:border-blue-600/10">
+                <div className="absolute inset-0 flex items-center justify-center opacity-30 group-hover:opacity-100 transition-all group-hover:scale-110 duration-700">
+                    {isPDF ? (
+                        <FileText size={64} className="text-blue-200 dark:text-slate-700 font-thin shrink-0" strokeWidth={1} />
                     ) : (
-                        <svg className="w-16 h-16 text-slate-300 dark:text-slate-700" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z" />
-                        </svg>
+                        <LinkIcon size={64} className="text-blue-200 dark:text-slate-700 font-thin shrink-0" strokeWidth={1} />
                     )}
                 </div>
 
-                <div className="absolute top-3 left-3 flex gap-2">
-                    <span className="px-2 py-1 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm rounded-lg text-[9px] font-black uppercase tracking-widest text-blue-600 shadow-sm border border-slate-100 dark:border-slate-800">
+                {/* Status Tags */}
+                <div className="absolute top-4 left-4 flex gap-2">
+                    <div className="px-3 py-1 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-full text-[9px] font-black uppercase tracking-widest text-blue-600 border border-slate-100 dark:border-slate-800 shadow-sm">
                         {content.program}
-                    </span>
+                    </div>
                 </div>
 
                 {isDownloaded && (
-                    <div className="absolute top-3 right-3">
-                        <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
-                            <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                            </svg>
-                        </div>
+                    <div className="absolute top-4 right-4">
+                        <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center shadow-lg border-2 border-white dark:border-slate-900"
+                        >
+                            <Check size={14} className="text-white" strokeWidth={3} />
+                        </motion.div>
                     </div>
                 )}
+
+                {/* Decorative Elements */}
+                <div className="absolute -bottom-10 -right-10 w-24 h-24 bg-blue-600/5 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
             </div>
 
-            <div className="px-1">
-                <h3 className="font-bold text-slate-900 dark:text-white mb-1 group-hover:text-blue-600 transition-colors line-clamp-2 leading-tight">
+            {/* Content Body */}
+            <div className="space-y-3">
+                <div className="flex items-center gap-2 mb-1">
+                    <div className="w-1 h-3 bg-blue-600 rounded-full"></div>
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{content.subject}</span>
+                </div>
+
+                <h3 className="text-lg font-black text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors line-clamp-2 leading-tight uppercase tracking-tighter italic">
                     {content.title}
                 </h3>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{content.subject}</p>
 
-                <div className="mt-4 flex items-center justify-between border-t border-slate-50 dark:border-slate-800 pt-3">
+                <div className="pt-4 flex items-center justify-between border-t border-slate-50 dark:border-slate-800">
                     <button
-                        onClick={(e) => { e.stopPropagation(); onDownload(content); }}
-                        className={`flex items-center gap-2 group/btn ${isDownloaded ? 'text-green-600' : 'text-slate-400 hover:text-blue-600'}`}
+                        onClick={(e) => { e.stopPropagation(); onDownload?.(content); }}
+                        className={`flex items-center gap-3 transition-all ${isDownloaded ? 'text-blue-600' : 'text-slate-300 hover:text-blue-600 active:scale-90'}`}
                     >
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${isDownloaded ? 'bg-green-50 dark:bg-green-900/20' : 'bg-slate-50 dark:bg-slate-800 group-hover/btn:bg-blue-50'}`}>
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
+                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${isDownloaded ? 'bg-blue-50 dark:bg-blue-900/30' : 'bg-slate-50 dark:bg-slate-800 group-hover:bg-blue-50'}`}>
+                            {isDownloaded ? <Zap size={16} fill="currentColor" strokeWidth={0} /> : <Download size={16} />}
                         </div>
-                        <span className="text-[10px] font-black uppercase">{isDownloaded ? 'Cached' : 'Offline'}</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">{isDownloaded ? 'Cached' : 'Offline'}</span>
                     </button>
-                    <button title="more" className="p-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors">
-                        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
-                        </svg>
+
+                    <button className="w-10 h-10 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-center transition-all">
+                        <MoreHorizontal size={16} className="text-slate-300" />
                     </button>
                 </div>
             </div>

@@ -1,11 +1,10 @@
-'use client';
-
-import { useState, useEffect } from 'react';
+"use client"
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { account } from '@/lib/appwrite';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { Suspense } from 'react';
+import { Lock, ChevronRight, ShieldCheck, Activity, Key, CheckCircle } from 'lucide-react';
 
 function ResetPasswordForm() {
     const [password, setPassword] = useState('');
@@ -24,12 +23,12 @@ function ResetPasswordForm() {
         e.preventDefault();
 
         if (password !== confirmPassword) {
-            setError('Passwords do not match');
+            setError('Operational error: Credentials do not match.');
             return;
         }
 
         if (!userId || !secret) {
-            setError('Invalid or expired reset link');
+            setError('Authorization error: Invalid or expired restoration link.');
             return;
         }
 
@@ -40,75 +39,104 @@ function ResetPasswordForm() {
             await account.updateRecovery(userId, secret, password);
             setIsSubmitted(true);
         } catch (err: any) {
-            setError(err.message || 'Failed to update password. Link may be expired.');
+            setError(err.message || 'Restoration sequence failed. Link may be invalidated.');
         } finally {
             setIsLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-950 dark:to-blue-950">
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="w-full max-w-md"
-            >
-                <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-800/50 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
-                    <div className="relative z-10">
-                        <div className="flex flex-col items-center mb-8">
-                            <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-blue-600/20">
-                                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                </svg>
-                            </div>
-                            <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">New Password</h1>
-                            <p className="text-slate-500 dark:text-slate-400 text-center">Set your new secure access credentials.</p>
-                        </div>
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-6 relative overflow-hidden">
+            {/* Background Architecture */}
+            <div className="absolute inset-0 z-0">
+                <div className="absolute top-[-20%] right-[-10%] w-[70%] h-[70%] bg-blue-600/[0.03] rounded-full blur-[120px]"></div>
+                <div className="absolute bottom-[-20%] left-[-10%] w-[70%] h-[70%] bg-indigo-600/[0.03] rounded-full blur-[120px]"></div>
+            </div>
 
+            <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="w-full max-w-xl relative z-10"
+            >
+                <div className="bg-white dark:bg-slate-900 rounded-[50px] shadow-3xl border border-slate-100 dark:border-slate-800 p-10 md:p-14 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-600 to-indigo-600"></div>
+
+                    <header className="mb-12">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Activity size={16} className="text-blue-600 animate-pulse" />
+                            <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.4em]">Credential Restoration Module</span>
+                        </div>
+                        <h1 className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic leading-none">
+                            Reset <span className="text-blue-600 italic">.</span>
+                        </h1>
+                        <p className="text-slate-400 font-medium text-lg mt-4">Provision new secure access credentials.</p>
+                    </header>
+
+                    <AnimatePresence mode="wait">
                         {isSubmitted ? (
                             <motion.div
+                                key="success"
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                className="text-center py-4"
+                                className="text-center"
                             >
-                                <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/50 rounded-xl text-green-600 dark:text-green-400 font-medium">
-                                    Success! Your password has been updated.
+                                <div className="mb-10 p-8 bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 rounded-3xl text-left">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <CheckCircle size={18} className="text-green-600" />
+                                        <h3 className="text-green-600 font-black uppercase tracking-widest text-xs">Identity Restored</h3>
+                                    </div>
+                                    <p className="text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
+                                        Your access credentials have been successfully re-provisioned. You may now authenticate with your new identity.
+                                    </p>
                                 </div>
                                 <Link
                                     href="/login"
-                                    className="px-8 py-3 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest inline-block"
+                                    className="inline-flex items-center gap-4 px-12 py-5 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-3xl font-black uppercase text-[10px] tracking-[0.3em] shadow-2xl transition-all hover:scale-105 active:scale-95"
                                 >
-                                    Proceed to Login
+                                    Login with New Key
+                                    <ChevronRight size={16} />
                                 </Link>
                             </motion.div>
                         ) : (
-                            <form onSubmit={handleReset} className="space-y-6">
+                            <form onSubmit={handleReset} className="space-y-8">
                                 {error && (
-                                    <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-xl text-red-600 dark:text-red-400 text-sm font-medium">
-                                        {error}
-                                    </div>
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="p-6 bg-red-50 dark:bg-red-950/20 border-l-4 border-red-500 rounded-2xl flex items-center gap-4"
+                                    >
+                                        <p className="text-red-600 dark:text-red-400 text-[10px] font-black uppercase tracking-widest">{error}</p>
+                                    </motion.div>
                                 )}
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5 ml-1 uppercase tracking-wider text-[10px]">New Password</label>
+
+                                <div className="space-y-6">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                                            <Key size={12} />
+                                            New Access Key (8+ Characters)
+                                        </label>
                                         <input
                                             type="password"
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
-                                            className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-slate-900 dark:text-white"
-                                            placeholder="••••••••"
+                                            className="w-full px-8 py-5 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-blue-600 focus:bg-white dark:focus:bg-slate-900 rounded-3xl outline-none transition-all font-bold text-slate-900 dark:text-white"
+                                            placeholder="••••••••••••"
                                             required
                                             minLength={8}
                                         />
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5 ml-1 uppercase tracking-wider text-[10px]">Confirm New Password</label>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                                            <ShieldCheck size={12} />
+                                            Verify Identity Protocol (Re-enter)
+                                        </label>
                                         <input
                                             type="password"
                                             value={confirmPassword}
                                             onChange={(e) => setConfirmPassword(e.target.value)}
-                                            className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-slate-900 dark:text-white"
-                                            placeholder="••••••••"
+                                            className="w-full px-8 py-5 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-blue-600 focus:bg-white dark:focus:bg-slate-900 rounded-3xl outline-none transition-all font-bold text-slate-900 dark:text-white"
+                                            placeholder="••••••••••••"
                                             required
                                             minLength={8}
                                         />
@@ -118,14 +146,28 @@ function ResetPasswordForm() {
                                 <button
                                     type="submit"
                                     disabled={isLoading}
-                                    className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black shadow-xl shadow-blue-600/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 uppercase tracking-widest text-xs"
+                                    className="w-full py-6 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-[30px] font-black uppercase text-xs tracking-[0.4em] shadow-2xl active:scale-95 transition-all flex items-center justify-center group disabled:opacity-50"
                                 >
-                                    {isLoading ? 'Updating Password...' : 'Reset Password'}
+                                    {isLoading ? (
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                                            Updating Vault...
+                                        </div>
+                                    ) : (
+                                        <span className="flex items-center gap-3">
+                                            Commit New Key
+                                            <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                                        </span>
+                                    )}
                                 </button>
                             </form>
                         )}
-                    </div>
+                    </AnimatePresence>
                 </div>
+
+                <p className="text-center mt-10 text-[9px] font-black text-slate-400 uppercase tracking-[0.5em]">
+                    Nurse Learning Corner . Clinical Intelligence Network
+                </p>
             </motion.div>
         </div>
     );
@@ -133,7 +175,12 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
     return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={
+            <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950">
+                <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <p className="mt-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Loading Recovery State...</p>
+            </div>
+        }>
             <ResetPasswordForm />
         </Suspense>
     );

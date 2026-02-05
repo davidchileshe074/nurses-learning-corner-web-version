@@ -1,4 +1,5 @@
-export type Program = 'RN' | 'RM' | 'PHN' | 'EN' | 'EM' | '';
+export type Program = 'REGISTERED-NURSING' | 'MIDWIFERY' | 'PUBLIC-HEALTH' | 'MENTAL-HEALTH' | 'ONCOLOGY' | 'PAEDIATRIC' | 'RN' | 'RM' | 'PHN' | 'EN' | 'EM' | '';
+export type YearOfStudy = 'YEAR1' | 'YEAR2' | 'YEAR3';
 
 export interface Profile {
     $id: string;
@@ -6,6 +7,8 @@ export interface Profile {
     name: string;
     email: string;
     program: Program;
+    whatsappNumber?: string;
+    yearOfStudy?: YearOfStudy;
     school?: string;
     subscriptionStatus: 'active' | 'expired' | 'none';
     isAdmin: boolean;
@@ -20,7 +23,7 @@ export interface Content {
     $id: string;
     title: string;
     description: string;
-    type: 'pdf' | 'video' | 'link' | 'flashcard';
+    type: 'pdf' | 'link' | 'flashcard' | 'marking_key' | string;
     subject: string;
     program: Program;
     fileId?: string;
@@ -31,11 +34,11 @@ export interface Content {
 
 export interface Note {
     $id: string;
+    noteId: string;
     userId: string;
     contentId: string;
-    title: string;
-    content: string;
-    lastPosition?: number;
+    text: string;
+    tags?: string;
     createdAt: string;
     updatedAt: string;
 }
@@ -47,4 +50,40 @@ export interface Flashcard {
     category: string;
     program: Program;
     mastered: boolean;
+}
+
+export interface Subscription {
+    $id: string;
+    subscriptionId: string;
+    subscriptionName: string;
+    userId: string;
+    status: 'ACTIVE' | 'EXPIRED' | 'NONE';
+    startDate: string;
+    endDate: string | null;
+    autoRenew: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface AppNotification {
+    $id: string;
+    userId: string;
+    title: string;
+    message: string;
+    type: 'system' | 'subscription' | 'content';
+    isRead: boolean;
+    createdAt: string;
+}
+
+export interface AccessCode {
+    $id: string;
+    code: string;
+    durationDays: number;
+    isUsed: boolean;
+    usedByUserId?: string;
+    usedAt?: string;
+    expirationDate?: string;
+    subscriptionId?: string;
+    plan?: string;
+    createdAt: string;
 }

@@ -1,25 +1,42 @@
-'use client';
-
-import { motion } from 'framer-motion';
+"use client"
+import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 import Link from 'next/link';
+import {
+    HelpCircle,
+    Mail,
+    MessageSquare,
+    ChevronDown,
+    ChevronLeft,
+    ExternalLink,
+    ShieldCheck,
+    Sparkles,
+    LifeBuoy,
+    BookOpen,
+    Zap,
+    ChevronRight
+} from 'lucide-react';
 
 const FAQS = [
     {
         q: "How do I access materials offline?",
-        a: "In the Library, click the 'Download' icon on any PDF. Once downloaded, you can access it even without an internet connection via the 'Downloaded' filter."
+        a: "Navigate to the Library, select any resource, and click 'Download Offline'. The material will be cached in your localized clinical vault, accessible via the 'Downloads' tab even without network connectivity.",
+        icon: Zap
     },
     {
         q: "Can I sync my notes across devices?",
-        a: "Yes! As long as you are signed in, your notes and study progress are automatically synced to our secure clinical cloud."
+        a: "Absolutely. All clinical observations and reading progress are synchronized in real-time with our High-Fidelity Cloud, ensuring your intelligence is available anywhere you authenticate.",
+        icon: Sparkles
     },
     {
-        q: "How do I reset my progress?",
-        a: "You can manage your study data from the Profile settings. Individual flashcard mastery can be reset within the Flashcard deck settings."
+        q: "How do I redeem an institutional access code?",
+        a: "Visit your Profile section and locate the 'Redeem Access' module. Input your unique code to unlock specialized curriculum modules and premium repository access.",
+        icon: ShieldCheck
     },
     {
-        q: "Is there a mobile app?",
-        a: "You're looking at it! This web app is a Progressive Web App (PWA). You can 'Add to Home Screen' on iOS or Android for a full native-like experience."
+        q: "What is a Progressive Web App (PWA)?",
+        a: "Nurse Corner is engineered as a PWA, allowing you to 'Install' or 'Add to Home Screen' on your mobile device for a full-screen, native-level performance experience without using an app store.",
+        icon: LifeBuoy
     }
 ];
 
@@ -27,83 +44,134 @@ export default function SupportPage() {
     const [openFaq, setOpenFaq] = useState<number | null>(null);
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 px-6 py-12">
-            <div className="max-w-3xl mx-auto">
-                <header className="text-center mb-16">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 px-6 py-12 md:py-20 relative overflow-hidden">
+            {/* Background elements */}
+            <div className="fixed inset-0 pointer-events-none z-0">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/5 rounded-full blur-[120px]"></div>
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-500/5 rounded-full blur-[120px]"></div>
+            </div>
+
+            <div className="max-w-4xl mx-auto relative z-10">
+                <header className="text-center mb-20">
                     <motion.div
-                        initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="inline-block p-4 bg-blue-600 rounded-[30px] mb-6 shadow-xl shadow-blue-600/20"
+                        initial={{ opacity: 0, scale: 0.8, y: -20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        className="inline-flex p-5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[35px] mb-8 shadow-2xl shadow-blue-600/10 relative group"
                     >
-                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
-                        </svg>
+                        <div className="absolute inset-0 bg-blue-600/5 rounded-[35px] blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <HelpCircle size={40} className="text-blue-600 relative z-10" strokeWidth={1.5} />
                     </motion.div>
-                    <h1 className="text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-4">Help Center</h1>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium">How can we assist your medical excellence journey today?</p>
+
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                    >
+                        <p className="text-blue-600 font-black uppercase tracking-[0.4em] text-[10px] mb-4">Concierge Support</p>
+                        <h1 className="text-5xl md:text-6xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic mb-6">
+                            Clinical Help Center <span className="text-blue-600">.</span>
+                        </h1>
+                        <p className="text-slate-500 dark:text-slate-400 font-medium text-lg max-w-xl mx-auto leading-relaxed">
+                            Ensuring your academic performance remains uninterrupted with world-class technical and clinical assistance.
+                        </p>
+                    </motion.div>
                 </header>
 
-                <section className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-16">
-                    <div className="bg-white dark:bg-slate-900 p-8 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all cursor-pointer group">
-                        <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                            </svg>
+                <section className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-24">
+                    <motion.div
+                        whileHover={{ y: -10 }}
+                        className="bg-white dark:bg-slate-900 p-10 rounded-[50px] border border-slate-50 dark:border-slate-800 shadow-sm hover:shadow-3xl hover:border-blue-600/30 transition-all cursor-pointer group flex flex-col items-start"
+                    >
+                        <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-blue-600 transition-all duration-500">
+                            <Mail size={28} className="text-blue-600 group-hover:text-white transition-colors" />
                         </div>
-                        <h3 className="text-lg font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">Email Support</h3>
-                        <p className="text-sm text-slate-500 font-medium">Get a response within 24 hours from our clinical tech team.</p>
-                        <a href="mailto:support@nursecorner.com" className="mt-6 block text-blue-600 font-bold text-sm">support@nursecorner.com →</a>
-                    </div>
+                        <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-3 uppercase tracking-tighter italic">Intelligence Desk</h3>
+                        <p className="text-slate-500 dark:text-slate-400 font-medium leading-relaxed mb-8">
+                            Detailed inquiries regarding curriculum content or technical architecture.
+                        </p>
+                        <a href="mailto:support@nursecorner.com" className="mt-auto inline-flex items-center gap-2 text-blue-600 font-black uppercase text-[10px] tracking-widest hover:gap-4 transition-all">
+                            support@nursecorner.com
+                            <ExternalLink size={14} />
+                        </a>
+                    </motion.div>
 
-                    <div className="bg-white dark:bg-slate-900 p-8 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all cursor-pointer group">
-                        <div className="w-12 h-12 bg-purple-50 dark:bg-purple-900/30 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                            <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                            </svg>
+                    <motion.div
+                        whileHover={{ y: -10 }}
+                        className="bg-white dark:bg-slate-900 p-10 rounded-[50px] border border-slate-50 dark:border-slate-800 shadow-sm hover:shadow-3xl hover:border-purple-600/30 transition-all cursor-pointer group flex flex-col items-start"
+                    >
+                        <div className="w-16 h-16 bg-purple-50 dark:bg-purple-900/30 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-purple-600 transition-all duration-500">
+                            <MessageSquare size={28} className="text-purple-600 group-hover:text-white transition-colors" />
                         </div>
-                        <h3 className="text-lg font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">Live Chat</h3>
-                        <p className="text-sm text-slate-500 font-medium">Quick answers for navigation and account issues.</p>
-                        <button className="mt-6 text-purple-600 font-bold text-sm">Start Conversation →</button>
-                    </div>
+                        <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-3 uppercase tracking-tighter italic">Live Response</h3>
+                        <p className="text-slate-500 dark:text-slate-400 font-medium leading-relaxed mb-8">
+                            Immediate operational assistance for account and navigation concerns.
+                        </p>
+                        <button className="mt-auto inline-flex items-center gap-2 text-purple-600 font-black uppercase text-[10px] tracking-widest hover:gap-4 transition-all">
+                            Initiate Protocol
+                            <ChevronRight size={14} />
+                        </button>
+                    </motion.div>
                 </section>
 
-                <section>
-                    <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-8 uppercase tracking-tighter">Common Questions</h2>
-                    <div className="space-y-4">
+                <section className="mb-24">
+                    <div className="flex items-center gap-3 mb-12">
+                        <div className="w-10 h-1 h-px bg-slate-200 dark:bg-slate-800"></div>
+                        <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic">Clinical Knowledge Base</h2>
+                        <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div>
+                    </div>
+
+                    <div className="space-y-6">
                         {FAQS.map((faq, i) => (
-                            <div
+                            <motion.div
                                 key={i}
-                                className="bg-white dark:bg-slate-900 rounded-[30px] border border-slate-100 dark:border-slate-800 overflow-hidden transition-all"
+                                initial={{ opacity: 0, x: -20 }}
+                                whileInView={{ opacity: 1, x: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: i * 0.1 }}
+                                className="bg-white dark:bg-slate-900 rounded-[35px] border border-slate-50 dark:border-slate-800 overflow-hidden hover:border-blue-600/20 transition-all group"
                             >
                                 <button
                                     onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                                    className="w-full p-6 text-left flex items-center justify-between"
+                                    className="w-full p-8 text-left flex items-center justify-between group-hover:bg-slate-50/50 dark:group-hover:bg-slate-800/10 transition-colors"
                                 >
-                                    <span className="font-bold text-slate-800 dark:text-slate-200">{faq.q}</span>
-                                    <svg
-                                        className={`w-5 h-5 text-slate-400 transition-transform ${openFaq === i ? 'rotate-180' : ''}`}
-                                        fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                    >
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
+                                    <div className="flex items-center gap-6">
+                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${openFaq === i ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'bg-slate-50 dark:bg-slate-800 text-slate-400 group-hover:text-blue-600'}`}>
+                                            <faq.icon size={20} />
+                                        </div>
+                                        <span className="font-bold text-lg text-slate-800 dark:text-slate-100 tracking-tight leading-none group-hover:text-blue-600 transition-colors">{faq.q}</span>
+                                    </div>
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border border-slate-100 dark:border-slate-800 transition-all ${openFaq === i ? 'bg-blue-600 border-blue-600 rotate-180' : 'group-hover:border-blue-600 group-hover:bg-blue-50'}`}>
+                                        <ChevronDown size={18} className={openFaq === i ? 'text-white' : 'text-slate-300 group-hover:text-blue-600'} />
+                                    </div>
                                 </button>
-                                {openFaq === i && (
-                                    <motion.div
-                                        initial={{ height: 0, opacity: 0 }}
-                                        animate={{ height: 'auto', opacity: 1 }}
-                                        className="px-6 pb-6 text-sm text-slate-500 leading-relaxed font-medium"
-                                    >
-                                        {faq.a}
-                                    </motion.div>
-                                )}
-                            </div>
+                                <AnimatePresence>
+                                    {openFaq === i && (
+                                        <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: 'auto', opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            className="px-8 pb-10 border-t border-slate-50 dark:border-slate-800"
+                                        >
+                                            <div className="pt-8">
+                                                <p className="text-base text-slate-500 dark:text-slate-400 leading-relaxed font-medium bg-slate-50/50 dark:bg-slate-800/30 p-6 rounded-3xl border border-dotted border-slate-200 dark:border-slate-700">
+                                                    {faq.a}
+                                                </p>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </motion.div>
                         ))}
                     </div>
                 </section>
 
-                <footer className="mt-20 text-center">
-                    <Link href="/" className="text-sm font-bold text-blue-600 hover:text-blue-500 uppercase tracking-widest">
-                        Back to Dashboard
+                <footer className="text-center pt-10">
+                    <Link
+                        href="/"
+                        className="inline-flex items-center gap-3 px-10 py-5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-sm font-black text-slate-400 hover:text-blue-600 hover:border-blue-600 rounded-3xl uppercase tracking-[0.3em] shadow-xl shadow-slate-200/50 dark:shadow-black/50 transition-all group"
+                    >
+                        <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+                        Acknowledge and Exit
                     </Link>
                 </footer>
             </div>

@@ -1,10 +1,11 @@
-'use client';
-
+"use client"
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { account } from '@/lib/appwrite';
 import { useAuthStore } from '@/hooks/useAuthStore';
 import { motion } from 'framer-motion';
+import { ShieldCheck, Mail, Lock, ChevronRight, Fingerprint, Activity } from 'lucide-react';
+import Link from 'next/link';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -24,93 +25,111 @@ export default function LoginPage() {
             await checkSession();
             router.push('/');
         } catch (err: any) {
-            setError(err.message || 'Login failed. Please check your credentials.');
+            setError(err.message || 'Authentication sequence failed.');
         } finally {
             setIsLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-950 dark:to-blue-950">
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-6 relative overflow-hidden">
+            {/* Background Architecture */}
+            <div className="absolute inset-0 z-0">
+                <div className="absolute top-[-20%] right-[-10%] w-[70%] h-[70%] bg-blue-600/[0.03] rounded-full blur-[120px]"></div>
+                <div className="absolute bottom-[-20%] left-[-10%] w-[70%] h-[70%] bg-indigo-600/[0.03] rounded-full blur-[120px]"></div>
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.02] dark:opacity-[0.05]"></div>
+            </div>
+
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="w-full max-w-md"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="w-full max-w-xl relative z-10"
             >
-                <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-800/50 rounded-3xl p-8 shadow-2xl overflow-hidden relative">
-                    {/* Decorative blur elements */}
-                    <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-500/20 rounded-full blur-3xl"></div>
-                    <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-indigo-500/20 rounded-full blur-3xl"></div>
+                <div className="bg-white dark:bg-slate-900 rounded-[60px] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] border border-slate-100 dark:border-slate-800 p-10 md:p-14 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600"></div>
 
-                    <div className="relative z-10">
-                        <div className="flex flex-col items-center mb-8">
-                            <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-blue-600/20">
-                                <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                                </svg>
-                            </div>
-                            <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Nurse Corner</h1>
-                            <p className="text-slate-500 dark:text-slate-400">Welcome back to your study hub</p>
+                    <header className="mb-14">
+                        <div className="flex items-center gap-2 mb-6">
+                            <Activity size={18} className="text-blue-600 animate-pulse" />
+                            <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.4em]">Sign In</span>
+                        </div>
+                        <h1 className="text-5xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tighter mb-4 italic leading-none">
+                            Nurse Learning
+                        </h1>
+                        <p className="text-slate-400 font-medium text-lg mt-2 leading-relaxed">Your companion in excellence</p>
+                    </header>
+
+                    {error && (
+                        <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="mb-10 p-6 bg-red-50 dark:bg-red-950/20 border-l-4 border-red-500 rounded-2xl flex items-center gap-4"
+                        >
+                            <p className="text-red-600 dark:text-red-400 text-[10px] font-black uppercase tracking-widest">{error}</p>
+                        </motion.div>
+                    )}
+
+                    <form onSubmit={handleLogin} className="space-y-10">
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                                Email Address
+                            </label>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="w-full px-8 py-5 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-blue-600 focus:bg-white dark:focus:bg-slate-900 rounded-[25px] outline-none transition-all font-bold text-slate-900 dark:text-white text-lg"
+                                placeholder="nurse@example.com"
+                                required
+                            />
                         </div>
 
-                        {error && (
-                            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-xl text-red-600 dark:text-red-400 text-sm">
-                                {error}
+                        <div className="space-y-3">
+                            <div className="flex justify-between items-center ml-1">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                    Password
+                                </label>
+                                <Link href="/forgot-password" title="Recover Access" className="text-[9px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-500 underline underline-offset-4 decoration-2">Forgot Password?</Link>
                             </div>
-                        )}
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="w-full px-8 py-5 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-blue-600 focus:bg-white dark:focus:bg-slate-900 rounded-[25px] outline-none transition-all font-bold text-slate-900 dark:text-white text-lg"
+                                placeholder="••••••••"
+                                required
+                            />
+                        </div>
 
-                        <form onSubmit={handleLogin} className="space-y-5">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 ml-1">Email Address</label>
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-slate-900 dark:text-white"
-                                    placeholder="doctor@example.com"
-                                    required
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 ml-1">Password</label>
-                                <input
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-slate-900 dark:text-white"
-                                    placeholder="••••••••"
-                                    required
-                                />
-                                <div className="flex justify-end mt-2">
-                                    <a href="/forgot-password" title="reset password" className="text-sm text-blue-600 hover:text-blue-500 font-medium">Forgot Password?</a>
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="w-full py-7 bg-blue-600 text-white rounded-[35px] font-black uppercase text-xs tracking-[0.5em] shadow-[0_20px_50px_-15px_rgba(37,99,235,0.4)] active:scale-[0.98] transition-all flex items-center justify-center group disabled:opacity-50"
+                        >
+                            {isLoading ? (
+                                <div className="flex items-center gap-4">
+                                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                                    Synchronizing...
                                 </div>
-                            </div>
+                            ) : (
+                                <span className="flex items-center gap-3">
+                                    Sign In
+                                    <ChevronRight size={18} className="group-hover:translate-x-2 transition-transform" />
+                                </span>
+                            )}
+                        </button>
+                    </form>
 
-                            <button
-                                type="submit"
-                                disabled={isLoading}
-                                className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold shadow-xl shadow-blue-600/20 transition-all hover:-translate-y-0.5 disabled:opacity-70 disabled:hover:translate-y-0"
-                            >
-                                {isLoading ? (
-                                    <span className="flex items-center justify-center gap-2">
-                                        <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        Authenticating...
-                                    </span>
-                                ) : 'Sign In'}
-                            </button>
-                        </form>
-
-                        <div className="mt-8 pt-8 border-t border-slate-100 dark:border-slate-800 text-center text-slate-500 dark:text-slate-400 text-sm">
-                            Don&apos;t have an account?{' '}
-                            <a href="/signup" title="signup" className="text-blue-600 hover:text-blue-500 font-bold ml-1">Join the community</a>
-                        </div>
+                    <div className="mt-16 pt-10 border-t border-slate-50 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-8">
+                        <Link href="/signup" title="Create Account" className="text-[11px] font-bold text-slate-400 uppercase tracking-widest leading-loose mx-auto">
+                            Don't have an account? <span className="text-blue-600 font-black ml-2 hover:text-blue-500 underline underline-offset-4 decoration-2">Create One</span>
+                        </Link>
                     </div>
                 </div>
+
+                <p className="text-center mt-12 text-[9px] font-black text-slate-400 uppercase tracking-[0.7em] opacity-40">
+                    Nurse Learning Corner . Clinical Intelligence Network
+                </p>
             </motion.div>
         </div>
     );

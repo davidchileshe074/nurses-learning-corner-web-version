@@ -7,13 +7,16 @@ export const noteServices = {
         try {
             const response = await databases.listDocuments(
                 config.databaseId,
-                'notes', // Assuming collection ID is 'notes'
+                config.notesCollectionId,
                 [
                     Query.equal('userId', userId),
                     Query.orderDesc('$updatedAt')
                 ]
             );
-            return response.documents as unknown as Note[];
+            return response.documents.map(doc => ({
+                ...doc,
+                content: (doc as any).text || (doc as any).content || ''
+            })) as unknown as Note[];
         } catch (error) {
             console.error('Error fetching user notes:', error);
             throw error;
@@ -24,14 +27,18 @@ export const noteServices = {
         try {
             const response = await databases.listDocuments(
                 config.databaseId,
-                'notes',
+                config.notesCollectionId,
                 [
                     Query.equal('userId', userId),
                     Query.equal('contentId', contentId)
                 ]
             );
             if (response.documents.length > 0) {
-                return response.documents[0] as unknown as Note;
+                const doc = response.documents[0];
+                return {
+                    ...doc,
+                    content: (doc as any).text || (doc as any).content || ''
+                } as unknown as Note;
             }
             return null;
         } catch (error) {
@@ -44,27 +51,34 @@ export const noteServices = {
         try {
             const existingNote = await this.getNoteByContent(note.userId, note.contentId);
 
+            const payload = {
+                userId: note.userId,
+                contentId: note.contentId,
+                text: note.text || '',
+                tags: note.tags || '',
+                updatedAt: new Date().toISOString()
+            };
+
             if (existingNote) {
                 return await databases.updateDocument(
                     config.databaseId,
-                    'notes',
+                    config.notesCollectionId,
                     existingNote.$id,
                     {
-                        title: note.title,
-                        content: note.content,
-                        lastPosition: note.lastPosition,
-                        updatedAt: new Date().toISOString()
+                        ...payload,
+                        noteId: existingNote.noteId
                     }
                 );
             } else {
+                const noteId = ID.unique();
                 return await databases.createDocument(
                     config.databaseId,
-                    'notes',
-                    ID.unique(),
+                    config.notesCollectionId,
+                    noteId,
                     {
-                        ...note,
+                        ...payload,
+                        noteId: noteId,
                         createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString()
                     }
                 );
             }
@@ -78,7 +92,7 @@ export const noteServices = {
         try {
             await databases.deleteDocument(
                 config.databaseId,
-                'notes',
+                config.notesCollectionId,
                 noteId
             );
         } catch (error) {

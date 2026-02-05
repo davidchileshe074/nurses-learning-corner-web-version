@@ -47,7 +47,11 @@ export const activityServices = {
                     timestamp: new Date().toISOString()
                 }
             );
-        } catch (error) {
+        } catch (error: any) {
+            if (error.code === 404) {
+                console.warn('Recent activity collection not found, skipping log.');
+                return;
+            }
             console.error('Error logging activity:', error);
         }
     },
@@ -64,8 +68,10 @@ export const activityServices = {
                 ]
             );
             return response.documents as unknown as RecentActivity[];
-        } catch (error) {
-            console.error('Error fetching recent activity:', error);
+        } catch (error: any) {
+            if (error.code !== 404) {
+                console.error('Error fetching recent activity:', error);
+            }
             return [];
         }
     }
