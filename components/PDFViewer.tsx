@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -75,6 +75,14 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
         window.addEventListener('keydown', handleKeyPress);
         return () => window.removeEventListener('keydown', handleKeyPress);
     }, [pageNumber, numPages, onClose]);
+
+    const options = useMemo(() => ({
+        cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
+        cMapPacked: true,
+        standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/standard_fonts/`,
+        enableXfa: false,
+        isEvalSupported: false,
+    }), []);
 
     return (
         <div
@@ -181,13 +189,7 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
                                     <p className="text-slate-600 text-xs text-center">Optimizing for fast rendering</p>
                                 </div>
                             }
-                            options={{
-                                cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
-                                cMapPacked: true,
-                                standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/standard_fonts/`,
-                                enableXfa: false,
-                                isEvalSupported: false,
-                            }}
+                            options={options}
                             className="flex-1 flex flex-col items-center justify-center min-h-full w-full"
                         >
                             <div className="flex-1 flex items-center justify-center w-full min-h-full py-12">
