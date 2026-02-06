@@ -4,19 +4,20 @@ export type YearOfStudy = 'YEAR1' | 'YEAR2' | 'YEAR3';
 export interface Profile {
     $id: string;
     userId: string;
-    name: string;
+    fullName: string;
     email: string;
-    program: Program;
     whatsappNumber?: string;
-    yearOfStudy?: YearOfStudy;
-    school?: string;
-    subscriptionStatus: 'active' | 'expired' | 'none';
-    isAdmin: boolean;
-    pushToken?: string;
-    avatarUrl?: string;
-    avatarFileId?: string;
+    bio?: string;
+    profilePicture?: string;
+    dateOfBirth?: string;
+    program: Program;
+    verified: boolean;
+    adminApproved: boolean;
     createdAt: string;
     updatedAt: string;
+    deviceId?: string;
+    yearOfStudy?: YearOfStudy | string;
+    pushToken?: string;
 }
 
 export interface Content {

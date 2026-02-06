@@ -158,7 +158,6 @@ export const accessCodeServices = {
                     config.profilesCollectionId,
                     profResponse.documents[0].$id,
                     {
-                        subscriptionStatus: 'active',
                         updatedAt: now.toISOString()
                     }
                 );
@@ -196,7 +195,6 @@ export const accessCodeServices = {
                 config.profilesCollectionId,
                 profResponse.documents[0].$id,
                 {
-                    subscriptionStatus: 'active',
                     updatedAt: now
                 }
             );

@@ -8,13 +8,12 @@ import { formatProgram, formatYear } from '@/lib/formatters';
 import {
     User,
     ShieldCheck,
-    CreditCard,
+   
     Settings,
     LogOut,
     ChevronRight,
     Mail,
     GraduationCap,
-    Clock,
     Zap,
     Key,
     Bell,
@@ -115,7 +114,7 @@ export default function ProfilePage() {
     };
 
     const isSubscriptionActive = subscriptionServices.checkSubscriptionExpiry(subscription);
-    const firstName = profile?.name?.split(' ')[0] || user?.name?.split(' ')[0] || 'Nurse';
+    const firstName = profile?.fullName?.split(' ')[0] || user?.name?.split(' ')[0] || 'Nurse';
 
     if (isLoading) {
         return (
@@ -135,11 +134,11 @@ export default function ProfilePage() {
                         animate={{ opacity: 1, scale: 1 }}
                         className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center border border-slate-200 shadow-sm overflow-hidden"
                     >
-                        {profile?.avatarUrl ? (
-                            <img src={profile.avatarUrl} className="w-full h-full object-cover" alt="Profile" />
+                        {profile?.profilePicture ? (
+                            <img src={profile.profilePicture} className="w-full h-full object-cover" alt="Profile" />
                         ) : (
                             <span className="text-2xl font-bold text-[#2B669A] tracking-tight">
-                                {(profile?.name || user?.name || 'N')
+                                {(profile?.fullName || user?.name || 'N')
                                     .split(' ')
                                     .slice(0, 2)
                                     .map(n => n[0])
@@ -155,7 +154,7 @@ export default function ProfilePage() {
                             animate={{ opacity: 1, x: 0 }}
                             className="text-3xl font-bold text-slate-800 tracking-tight"
                         >
-                            {profile?.name || user?.name || 'NLC Learner'}
+                            {profile?.fullName || user?.name || 'NLC Learner'}
                         </motion.h1>
                         <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mt-2">
                             <span className="px-3 py-1 bg-blue-50 text-[#2B669A] rounded text-xs font-bold uppercase tracking-wide border border-blue-100">

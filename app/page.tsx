@@ -294,7 +294,7 @@ export default function Home() {
         return MEDICAL_TERMS[seed % MEDICAL_TERMS.length];
     }, []);
 
-    const firstName = profile?.name?.split(' ')[0] || user?.name?.split(' ')[0] || 'Nurse';
+    const firstName = profile?.fullName?.split(' ')[0] || user?.name?.split(' ')[0] || 'Nurse';
 
     if (!user) return null;
 

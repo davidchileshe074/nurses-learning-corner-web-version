@@ -9,7 +9,7 @@ import { UserPlus, Mail, Lock, ChevronRight, GraduationCap, User, Activity } fro
 import Link from 'next/link';
 
 export default function SignupPage() {
-    const [name, setName] = useState('');
+    const [fullName, setfullName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [whatsappNumber, setWhatsappNumber] = useState('');
@@ -34,7 +34,7 @@ export default function SignupPage() {
 
         try {
             // 1. Create Account
-            const user = await account.create(ID.unique(), email, password, name);
+            const user = await account.create(ID.unique(), email, password, fullName);
 
             // 2. Create Session
             await account.createEmailPasswordSession(email, password);
@@ -46,13 +46,13 @@ export default function SignupPage() {
                 ID.unique(),
                 {
                     userId: user.$id,
-                    name: name,
+                    fullName: fullName,
                     email: email,
                     program: program,
                     whatsappNumber: whatsappNumber,
                     yearOfStudy: yearOfStudy,
-                    subscriptionStatus: 'none',
-                    isAdmin: false,
+                    verified: false,
+                    adminApproved: false,
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
                 }
@@ -112,8 +112,8 @@ export default function SignupPage() {
                                     <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Full Name</label>
                                     <input
                                         type="text"
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
+                                        value={fullName}
+                                        onChange={(e) => setfullName(e.target.value)}
                                         className="w-full px-4 py-2.5 bg-white border border-slate-300 focus:border-[#2B669A] rounded-md outline-none transition-all text-sm font-medium text-slate-900"
                                         placeholder="e.g. Sarah Phiri"
                                         required
