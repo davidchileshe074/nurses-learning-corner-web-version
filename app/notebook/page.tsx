@@ -66,35 +66,34 @@ export default function NotebookPage() {
     };
 
     return (
-        <div className="h-[calc(100vh-6rem)] md:h-[calc(100vh-theme(spacing.24))] bg-slate-50 dark:bg-slate-950 flex flex-col md:flex-row overflow-hidden">
+        <div className="h-[calc(100vh-6rem)] md:h-[calc(100vh-theme(spacing.24))] bg-[#F3F5F7] flex flex-col md:flex-row overflow-hidden border-t border-slate-200">
             {/* Sidebar List */}
-            <aside className="w-full md:w-80 lg:w-96 border-r border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 flex flex-col h-[40%] md:h-full relative z-20">
-                <div className="p-8 border-b border-slate-50 dark:border-slate-800 space-y-6">
+            <aside className="w-full md:w-80 lg:w-96 border-r border-[#d5dde5] bg-white flex flex-col h-[40%] md:h-full relative z-20">
+                <div className="p-6 border-b border-[#d5dde5] space-y-4">
                     <div className="flex items-center justify-between">
                         <div>
                             <div className="flex items-center gap-2 mb-1">
-                                <span className="w-2 h-2 rounded-full bg-purple-600"></span>
-                                <span className="text-[10px] font-black text-purple-600 uppercase tracking-widest">Clinical Log</span>
+                                <span className="text-xs font-bold text-[#2B669A] uppercase tracking-wide">My Notes</span>
                             </div>
-                            <h1 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic">Notebook <span className="text-purple-600 italic">.</span></h1>
+                            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Notebook</h1>
                         </div>
                         <button
                             onClick={createNewNote}
-                            className="w-12 h-12 bg-purple-600 hover:bg-purple-700 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-purple-600/20 transition-all active:scale-95 group"
+                            className="w-10 h-10 bg-[#2B669A] hover:bg-[#1e4a72] text-white rounded-md flex items-center justify-center shadow-sm transition-all active:scale-95"
                             title="New Note"
                         >
-                            <Plus size={24} className="group-hover:rotate-90 transition-transform" />
+                            <Plus size={20} />
                         </button>
                     </div>
 
                     <div className="relative group">
-                        <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-purple-600 transition-colors">
+                        <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-400">
                             <Search size={16} />
                         </div>
                         <input
                             type="text"
-                            placeholder="Search notes..."
-                            className="w-full pl-12 pr-4 py-3 bg-slate-100 dark:bg-slate-900 border-2 border-transparent focus:border-purple-600 focus:bg-white dark:focus:bg-slate-800 rounded-2xl outline-none transition-all text-sm font-bold"
+                            placeholder="Find a note..."
+                            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 focus:border-[#2B669A] focus:bg-white rounded-md outline-none transition-all text-sm font-medium text-slate-900"
                         />
                     </div>
                 </div>
@@ -102,56 +101,44 @@ export default function NotebookPage() {
                 <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
                     {isLoading ? (
                         [1, 2, 3].map(i => (
-                            <div key={i} className="h-24 bg-slate-50 dark:bg-slate-900/50 animate-pulse rounded-3xl border border-slate-100/50 dark:border-slate-800/50"></div>
+                            <div key={i} className="h-20 bg-slate-50 animate-pulse rounded-lg border border-slate-100"></div>
                         ))
                     ) : notes.length > 0 ? (
                         notes.map((note) => (
                             <button
                                 key={note.$id}
                                 onClick={() => setSelectedNote(note)}
-                                className={`w-full text-left p-5 rounded-[28px] transition-all relative overflow-hidden group border-2 ${selectedNote?.$id === note.$id
-                                    ? 'bg-purple-50/50 dark:bg-purple-900/10 border-purple-600 shadow-xl shadow-purple-600/5'
-                                    : 'hover:bg-slate-50 dark:hover:bg-slate-900 border-transparent text-slate-400'
+                                className={`w-full text-left p-4 rounded-lg transition-all border ${selectedNote?.$id === note.$id
+                                    ? 'bg-blue-50 border-blue-200'
+                                    : 'hover:bg-slate-50 border-transparent text-slate-500'
                                     }`}
                             >
-                                <div className="flex items-start justify-between mb-2">
-                                    <div className={`p-2 rounded-xl transition-colors ${selectedNote?.$id === note.$id ? 'bg-purple-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover:bg-purple-100 group-hover:text-purple-600'}`}>
+                                <div className="flex items-start justify-between mb-1">
+                                    <div className={`flex items-center gap-2 ${selectedNote?.$id === note.$id ? 'text-[#2B669A]' : 'text-slate-400'}`}>
                                         <FileText size={14} />
+                                        <span className="text-[10px] font-bold uppercase tracking-wide">
+                                            {new Date(note.updatedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                        </span>
                                     </div>
-                                    <span className="text-[9px] font-black uppercase tracking-widest opacity-60">
-                                        {new Date(note.updatedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                                    </span>
                                 </div>
-                                <h3 className={`font-black text-sm truncate uppercase tracking-tight ${selectedNote?.$id === note.$id ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200'}`}>
+                                <h3 className={`font-bold text-sm truncate ${selectedNote?.$id === note.$id ? 'text-[#2B669A]' : 'text-slate-700'}`}>
                                     {note.text.split('\n')[0] || 'Untitled Record'}
                                 </h3>
-                                <p className="text-[11px] line-clamp-1 mt-1 font-medium opacity-60">{note.text.split('\n')[1] || 'Drafting clinical points...'}</p>
-
-                                {note.contentId !== 'general' && (
-                                    <div className="mt-3 flex items-center gap-1.5 px-2 py-1 bg-white dark:bg-slate-800 w-fit rounded-lg border border-slate-100 dark:border-slate-700">
-                                        <LinkIcon size={8} className="text-purple-600" />
-                                        <span className="text-[8px] font-black text-purple-600 uppercase tracking-widest">Resource Linked</span>
-                                    </div>
-                                )}
-
-                                <div className={`absolute right-4 top-1/2 -translate-y-1/2 transition-all ${selectedNote?.$id === note.$id ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'}`}>
-                                    <ChevronRight size={16} className="text-purple-600" />
-                                </div>
+                                <p className="text-xs line-clamp-1 mt-1 opacity-70">{note.text.split('\n')[1] || 'No additional text...'}</p>
                             </button>
                         ))
                     ) : (
                         <div className="flex flex-col items-center justify-center py-20 text-center px-6">
-                            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-900 rounded-[35%] flex items-center justify-center mb-6 border border-white dark:border-slate-800 shadow-xl">
-                                <SearchX size={32} className="text-slate-300" />
+                            <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                                <SearchX size={24} className="text-slate-400" />
                             </div>
-                            <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tighter">Empty Archive</h3>
-                            <p className="text-xs text-slate-500 mt-2 font-medium">Your medical journey starts with a single observation.</p>
+                            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Empty Notebook</h3>
                             <button
                                 onClick={createNewNote}
-                                className="mt-6 flex items-center gap-2 text-purple-600 font-black uppercase text-[10px] tracking-widest hover:gap-3 transition-all"
+                                className="mt-4 flex items-center gap-2 text-[#2B669A] font-bold text-xs uppercase tracking-wide hover:underline"
                             >
-                                <FolderPlus size={14} />
-                                Initialize First Note
+                                <Plus size={14} />
+                                Create First Note
                             </button>
                         </div>
                     )}
@@ -179,21 +166,20 @@ export default function NotebookPage() {
                     ) : (
                         <div className="h-full flex flex-col items-center justify-center text-center p-12">
                             <motion.div
-                                initial={{ scale: 0.9, opacity: 0 }}
+                                initial={{ scale: 0.95, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
-                                className="w-24 h-24 bg-slate-100 dark:bg-slate-900 rounded-[40px] flex items-center justify-center mb-8 border border-white dark:border-slate-800 shadow-2xl relative"
+                                className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6"
                             >
-                                <div className="absolute inset-0 bg-purple-600/5 blur-2xl rounded-full"></div>
-                                <History size={40} className="text-slate-300 dark:text-slate-700 relative z-10" />
+                                <History size={32} className="text-slate-300" />
                             </motion.div>
-                            <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic">Select a Record</h3>
-                            <p className="text-sm font-medium text-slate-500 mt-2 max-w-xs mx-auto">Access your clinical insights or create a new entry to document your findings.</p>
+                            <h3 className="text-xl font-bold text-slate-900 tracking-tight">Select a Note</h3>
+                            <p className="text-sm font-medium text-slate-500 mt-2 max-w-xs mx-auto">Choose a note from the sidebar or create a new one.</p>
                             <button
                                 onClick={createNewNote}
-                                className="mt-10 px-10 py-4 bg-purple-600 text-white rounded-3xl font-black uppercase text-xs tracking-widest shadow-2xl shadow-purple-600/20 hover:scale-105 transition-transform active:scale-95 flex items-center gap-3"
+                                className="mt-8 px-6 py-3 bg-[#2B669A] hover:bg-[#1e4a72] text-white rounded-md font-bold text-xs uppercase tracking-wide shadow-sm transition-all active:scale-95 flex items-center gap-2"
                             >
-                                <Plus size={18} />
-                                Create New Record
+                                <Plus size={16} />
+                                New Note
                             </button>
                         </div>
                     )}

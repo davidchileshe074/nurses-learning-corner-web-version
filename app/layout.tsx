@@ -6,6 +6,8 @@ import { AuthGuard } from "@/components/AuthGuard";
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-plus-jakarta",
+  display: "swap",
+  fallback: ["system-ui", "arial"],
 });
 
 export const metadata: Metadata = {
@@ -41,7 +43,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body
-        className={`${plusJakartaSans.variable} font-sans antialiased h-full bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-50`}
+        className={`${plusJakartaSans.variable} font-sans antialiased h-full bg-slate-50 text-slate-900`}
         suppressHydrationWarning={true}
       >
         <AuthGuard>

@@ -58,43 +58,38 @@ export default function DownloadsPage() {
     const totalSize = (downloadedItems.reduce((acc, item) => acc + (item.blob.size || 0), 0) / (1024 * 1024)).toFixed(1);
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 px-6 py-12">
+        <div className="min-h-screen bg-[#F3F5F7] px-6 py-12">
             <div className="max-w-7xl mx-auto">
-                <header className="mb-14">
-                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+                <header className="mb-10 border-b border-slate-200 pb-8">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div>
                             <div className="flex items-center gap-2 mb-2">
-                                <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
-                                <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">Offline Clinical Archives</span>
+                                <span className="text-xs font-bold text-[#2B669A] uppercase tracking-wide">Offline Storage</span>
                             </div>
-                            <h1 className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">
-                                Downloads <span className="text-blue-600 italic">.</span>
+                            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+                                Downloads
                             </h1>
-                            <p className="text-slate-500 dark:text-slate-400 font-medium text-base mt-2">Your portable high-fidelity clinical library.</p>
+                            <p className="text-slate-500 font-medium text-sm mt-1">Locally cached clinical resources.</p>
                         </div>
 
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="bg-white dark:bg-slate-900 px-8 py-4 rounded-[30px] border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-black/50 flex items-center gap-6"
-                        >
-                            <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center text-blue-600">
-                                <HardDrive size={24} />
+                        <div className="flex items-center gap-4">
+                            <div className="bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm flex items-center gap-3">
+                                <HardDrive size={18} className="text-slate-400" />
+                                <div>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Used Space</p>
+                                    <p className="font-bold text-slate-800 text-sm">{totalSize} MB</p>
+                                </div>
                             </div>
-                            <div>
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Local Storage</p>
-                                <p className="font-black text-slate-900 dark:text-white text-xl leading-none">{totalSize} <span className="text-xs text-slate-400">MB</span></p>
-                            </div>
-                        </motion.div>
 
-                        <div className={`px-4 py-2 rounded-2xl border flex items-center gap-3 transition-all duration-500 order-first md:order-last ${isOffline
-                                ? 'bg-amber-500/10 border-amber-500/20 text-amber-500'
-                                : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
-                            }`}>
-                            {isOffline ? <WifiOff size={14} /> : <Cloud size={14} />}
-                            <span className="text-[10px] font-black uppercase tracking-widest">
-                                {isOffline ? 'Offline Active' : 'Clinical Sync'}
-                            </span>
+                            <div className={`px-3 py-1.5 rounded-lg border flex items-center gap-2 ${isOffline
+                                ? 'bg-amber-50 border-amber-100 text-amber-600'
+                                : 'bg-emerald-50 border-emerald-100 text-emerald-600'
+                                }`}>
+                                {isOffline ? <WifiOff size={14} /> : <Cloud size={14} />}
+                                <span className="text-[10px] font-bold uppercase tracking-wide">
+                                    {isOffline ? 'Offline' : ' synced'}
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </header>
@@ -136,14 +131,13 @@ export default function DownloadsPage() {
                         </AnimatePresence>
                     </motion.div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center py-32 text-center bg-white dark:bg-slate-900 rounded-[60px] border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden group">
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-transparent dark:from-blue-950/10 dark:to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-                        <div className="w-24 h-24 bg-slate-50 dark:bg-slate-800 flex items-center justify-center rounded-[35%] mx-auto mb-8 shadow-xl relative z-10">
-                            <DownloadCloud className="text-slate-300" size={48} />
+                    <div className="flex flex-col items-center justify-center py-24 text-center bg-white rounded-lg border border-slate-200 border-dashed">
+                        <div className="w-16 h-16 bg-slate-50 flex items-center justify-center rounded-full mb-4">
+                            <DownloadCloud className="text-slate-300" size={32} />
                         </div>
-                        <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic relative z-10">Offline Vault Empty</h3>
-                        <p className="text-slate-400 font-medium text-base mt-4 uppercase tracking-widest max-w-sm mx-auto px-6 relative z-10 leading-loose">
-                            Downloaded clinical materials will be archived here for instant offline access.
+                        <h3 className="text-lg font-bold text-slate-800">No Downloads</h3>
+                        <p className="text-slate-500 text-sm mt-1 max-w-sm">
+                            Resources you download will appear here.
                         </p>
                     </div>
                 )}

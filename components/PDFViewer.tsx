@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { noteServices } from '@/services/notes';
 import { NoteEditor } from './NoteEditor';
 
-// Set worker for react-pdf
+// Set worker for react-pdf with optimized settings
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 interface PDFViewerProps {
@@ -25,33 +25,53 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
     const [scale, setScale] = useState(1.0);
     const [isLoading, setIsLoading] = useState(true);
     const [showNotes, setShowNotes] = useState(false);
+    const [loadError, setLoadError] = useState<string | null>(null);
 
     function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
         console.log('PDF loaded successfully with', numPages, 'pages');
         setNumPages(numPages);
         setIsLoading(false);
+        setLoadError(null);
     }
 
     function onDocumentLoadError(error: Error) {
         console.error('PDF Load Error:', error);
         setIsLoading(false);
+        setLoadError('Failed to load document. Please try again.');
     }
 
-    const saveProgress = async (pageNum: number) => {
+    const saveProgress = useCallback(async (pageNum: number) => {
         try {
             const { downloadServices } = await import('@/services/download');
             await downloadServices.saveReadingProgress(contentId, pageNum);
         } catch (error) {
             console.error('Failed to save reading progress:', error);
         }
-    };
+    }, [contentId]);
 
+    // Debounced progress saving
     useEffect(() => {
         const timer = setTimeout(() => {
             saveProgress(pageNumber);
-        }, 3000);
+        }, 2000); // Reduced from 3000ms for faster sync
         return () => clearTimeout(timer);
-    }, [pageNumber]);
+    }, [pageNumber, saveProgress]);
+
+    // Keyboard navigation
+    useEffect(() => {
+        const handleKeyPress = (e: KeyboardEvent) => {
+            if (e.key === 'ArrowLeft' && pageNumber > 1) {
+                setPageNumber(prev => prev - 1);
+            } else if (e.key === 'ArrowRight' && pageNumber < numPages) {
+                setPageNumber(prev => prev + 1);
+            } else if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyPress);
+        return () => window.removeEventListener('keydown', handleKeyPress);
+    }, [pageNumber, numPages, onClose]);
 
     return (
         <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col">
@@ -61,6 +81,7 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
                     <button
                         onClick={onClose}
                         className="p-2 text-slate-400 hover:text-white transition-colors"
+                        title="Close (Esc)"
                     >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -74,8 +95,9 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
                     <div className="flex items-center bg-slate-800 rounded-xl px-2 sm:px-4 py-2 gap-2 sm:gap-4">
                         <button
                             onClick={() => setPageNumber(Math.max(1, pageNumber - 1))}
-                            className="text-slate-400 hover:text-white disabled:opacity-30"
+                            className="text-slate-400 hover:text-white disabled:opacity-30 transition-colors"
                             disabled={pageNumber <= 1}
+                            title="Previous page (←)"
                         >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -86,8 +108,9 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
                         </span>
                         <button
                             onClick={() => setPageNumber(Math.min(numPages, pageNumber + 1))}
-                            className="text-slate-400 hover:text-white disabled:opacity-30"
+                            className="text-slate-400 hover:text-white disabled:opacity-30 transition-colors"
                             disabled={pageNumber >= numPages}
+                            title="Next page (→)"
                         >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -124,27 +147,58 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
             <div className="flex-1 flex overflow-hidden">
                 {/* PDF Area */}
                 <div className={`flex-1 overflow-auto bg-slate-950 p-4 sm:p-8 flex flex-col items-center custom-scrollbar transition-all duration-500 ${showNotes ? 'lg:border-r lg:border-slate-800' : ''}`}>
-                    <Document
-                        file={url}
-                        onLoadSuccess={onDocumentLoadSuccess}
-                        onLoadError={onDocumentLoadError}
-                        loading={
-                            <div className="flex flex-col items-center gap-4 mt-20 text-center">
-                                <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                                <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Preparing Scientific Assets...</p>
+                    {loadError ? (
+                        <div className="flex flex-col items-center gap-4 mt-20 text-center">
+                            <div className="w-20 h-20 bg-red-900/20 rounded-full flex items-center justify-center">
+                                <svg className="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
                             </div>
-                        }
-                        className="shadow-2xl shadow-black/80 flex flex-col items-center min-h-full"
-                    >
-                        <Page
-                            pageNumber={pageNumber}
-                            scale={showNotes ? scale * 0.75 : scale}
-                            width={typeof window !== 'undefined' ? Math.min(window.innerWidth * 0.9, 1200) : undefined}
-                            renderAnnotationLayer={true}
-                            renderTextLayer={true}
-                            className="rounded-lg overflow-hidden !bg-slate-900"
-                        />
-                    </Document>
+                            <p className="text-red-400 font-bold text-sm">{loadError}</p>
+                            <button
+                                onClick={onClose}
+                                className="mt-4 px-6 py-3 bg-slate-800 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-slate-700 transition-colors"
+                            >
+                                Close Viewer
+                            </button>
+                        </div>
+                    ) : (
+                        <Document
+                            file={url}
+                            onLoadSuccess={onDocumentLoadSuccess}
+                            onLoadError={onDocumentLoadError}
+                            loading={
+                                <div className="flex flex-col items-center gap-4 mt-20 text-center">
+                                    <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                                    <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Preparing Scientific Assets...</p>
+                                    <p className="text-slate-600 text-xs">Optimizing for fast rendering</p>
+                                </div>
+                            }
+                            options={{
+                                cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
+                                cMapPacked: true,
+                                standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/standard_fonts/`,
+                                // Performance optimizations
+                                enableXfa: false,
+                                isEvalSupported: false,
+                            }}
+                            className="shadow-2xl shadow-black/80 flex flex-col items-center min-h-full"
+                        >
+                            <Page
+                                pageNumber={pageNumber}
+                                scale={showNotes ? scale * 0.75 : scale}
+                                width={typeof window !== 'undefined' ? Math.min(window.innerWidth * 0.9, 1200) : undefined}
+                                renderAnnotationLayer={true}
+                                renderTextLayer={true}
+                                className="rounded-lg overflow-hidden !bg-slate-900"
+                                loading={
+                                    <div className="flex items-center justify-center h-[800px]">
+                                        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                                    </div>
+                                }
+                            />
+                        </Document>
+                    )}
                 </div>
 
                 {/* Note Sidebar */}
@@ -169,8 +223,8 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
             {/* Sync Status Badge */}
             <div className={`absolute bottom-8 left-8 transition-opacity duration-1000 ${isLoading ? 'opacity-0' : 'opacity-100'}`}>
                 <div className="px-4 py-2 bg-slate-900/80 backdrop-blur-md rounded-xl border border-slate-800/50 flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Encrypted Cloud Sync Active</span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Page {pageNumber} Synced</span>
                 </div>
             </div>
         </div>

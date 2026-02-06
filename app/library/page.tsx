@@ -197,47 +197,42 @@ export default function LibraryPage() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 px-6 py-10 relative overflow-hidden">
-            {/* Background elements */}
-            <div className="fixed inset-0 pointer-events-none z-0">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/5 rounded-full blur-[120px]"></div>
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-500/5 rounded-full blur-[120px]"></div>
-            </div>
+        <div className="min-h-screen bg-[#F3F5F7] px-6 py-8 relative">
+            {/* Background elements - Clean, no blobs */}
 
             <div className="max-w-7xl mx-auto relative z-10">
                 {/* Dashboard Header */}
-                <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-10 mb-16">
+                <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8">
                     <div>
                         <motion.div
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
-                            className="flex items-center gap-2 mb-4"
+                            className="flex items-center gap-2 mb-2"
                         >
-                            <div className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></div>
-                            <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.4em]">Integrated Curriculum Repository</span>
+                            <span className="text-xs font-bold text-[#2B669A] uppercase tracking-wider">Public Health Library</span>
                         </motion.div>
                         <motion.h1
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.1 }}
-                            className="text-5xl md:text-6xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic leading-none"
+                            className="text-3xl font-bold text-slate-900 tracking-tight"
                         >
-                            Clinical Library <span className="text-blue-600 italic">.</span>
+                            Clinical Resources
                         </motion.h1>
                     </div>
 
                     <div className="flex flex-col sm:flex-row items-center gap-6 w-full lg:w-auto">
                         {/* Search Input with Suggestions */}
                         <div className="relative w-full sm:w-[400px] group">
-                            <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors">
-                                <Search size={20} strokeWidth={2.5} />
+                            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400">
+                                <Search size={18} />
                             </div>
                             <input
                                 type="text"
-                                placeholder="Search by topic, unit, or curriculum code..."
+                                placeholder="Search resources..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-16 pr-6 py-5 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 focus:border-blue-600 rounded-[30px] outline-none transition-all font-bold text-slate-900 dark:text-white shadow-xl shadow-slate-100/50 dark:shadow-black/50"
+                                className="w-full pl-12 pr-4 py-2.5 bg-white border border-slate-300 focus:border-[#2B669A] rounded-md outline-none transition-all text-sm font-medium text-slate-900 shadow-sm placeholder:text-slate-400"
                             />
 
                             {/* Suggestions Dropdown */}
@@ -284,23 +279,22 @@ export default function LibraryPage() {
                     </div>
                 </header>
 
-                {/* Intelligent Navigation Tabs */}
-                <div className="space-y-10 mb-16">
+                <div className="space-y-6 mb-8">
                     {/* Program Toggle & Global discovery */}
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                        <div className="flex items-center gap-3 bg-white dark:bg-slate-900 p-2 rounded-[25px] border border-slate-100 dark:border-slate-800 shadow-xl overflow-x-auto scrollbar-hide max-w-full">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div className="flex items-center gap-2 bg-white p-1.5 rounded-lg border border-slate-200 shadow-sm overflow-x-auto max-w-full">
                             <button
                                 onClick={() => setActiveSubject(null)}
-                                className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${!activeSubject ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:text-blue-600'}`}
+                                className={`px-4 py-2 rounded-md text-xs font-bold uppercase tracking-wide transition-all whitespace-nowrap ${!activeSubject ? 'bg-[#2B669A] text-white' : 'text-slate-500 hover:text-[#2B669A] hover:bg-slate-50'}`}
                             >
                                 All Disciplines
                             </button>
-                            <div className="w-px h-6 bg-slate-100 dark:bg-slate-800 mx-2"></div>
+                            <div className="w-px h-5 bg-slate-200 mx-1"></div>
                             {COURSES.map((course) => (
                                 <button
                                     key={course}
                                     onClick={() => setActiveSubject(course)}
-                                    className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeSubject === course ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:text-blue-600'}`}
+                                    className={`px-4 py-2 rounded-md text-xs font-bold uppercase tracking-wide transition-all whitespace-nowrap ${activeSubject === course ? 'bg-[#2B669A] text-white' : 'text-slate-500 hover:text-[#2B669A] hover:bg-slate-50'}`}
                                 >
                                     {course}
                                 </button>
@@ -325,12 +319,12 @@ export default function LibraryPage() {
                     </div>
 
                     {/* Secondary Filters: Type & Offline */}
-                    <div className="flex flex-wrap items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-2">
                         {FILTER_OPTIONS.map((opt) => (
                             <button
                                 key={opt}
                                 onClick={() => setActiveFilter(opt)}
-                                className={`px-8 py-3.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all border-2 ${activeFilter === opt ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white shadow-2xl' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-400 hover:border-blue-600 hover:text-blue-600'}`}
+                                className={`px-4 py-2 rounded-md text-xs font-bold uppercase tracking-wide transition-all border ${activeFilter === opt ? 'bg-slate-800 text-white border-slate-800' : 'bg-white border-slate-200 text-slate-500 hover:border-[#2B669A] hover:text-[#2B669A]'}`}
                             >
                                 <div className="flex items-center gap-2">
                                     {opt === 'Downloads' && <Download size={14} />}
@@ -346,20 +340,20 @@ export default function LibraryPage() {
 
                 {/* Resource Grid */}
                 <main className="min-h-[600px] relative">
-                    <div className="flex items-center justify-between mb-10 px-2">
+                    <div className="flex items-center justify-between mb-6 px-1">
                         <div className="flex items-center gap-3">
-                            <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.5em]">Current Repository Allocation</span>
-                            <div className="h-px w-20 bg-slate-100 dark:bg-slate-800"></div>
-                            <span className="text-[10px] font-black text-blue-600 bg-blue-50 dark:bg-blue-900/40 px-3 py-1 rounded-lg">
-                                {totalResults} Assets Identified
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Showing Results</span>
+                            <div className="h-4 w-px bg-slate-300"></div>
+                            <span className="text-xs font-bold text-[#2B669A] bg-blue-50 px-2 py-0.5 rounded">
+                                {totalResults} Items
                             </span>
                         </div>
                     </div>
 
                     {isLoading && offset === 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                                <div key={i} className="animate-pulse bg-white dark:bg-slate-900 rounded-[40px] h-[450px] border border-slate-100 dark:border-slate-800"></div>
+                                <div key={i} className="animate-pulse bg-white rounded-lg h-[300px] border border-slate-200"></div>
                             ))}
                         </div>
                     ) : displayedContent.length > 0 ? (

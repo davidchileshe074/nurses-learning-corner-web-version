@@ -1,20 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  /* Slate 50 */
-  --foreground: #0f172a;
-  /* Slate 900 */
+  --background: #F3F5F7;
+  /* DHIS2 Light Grey */
+  --foreground: #212934;
+  /* Charcoal */
 
-  --primary: #2563eb;
-  /* Blue 600 */
+  --primary: #2B669A;
+  /* DHIS2 Blue */
   --primary-foreground: #ffffff;
 
   --card: #ffffff;
-  --card-foreground: #0f172a;
+  --card-foreground: #212934;
 
-  --border: #f1f5f9;
-  /* Slate 100 */
+  --border: #d5dde5;
+  /* Light Border */
 }
 
 @theme inline {
@@ -64,7 +64,7 @@
   }
 
   .glass {
-    @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-slate-800/50;
+    @apply bg-white/90 backdrop-blur-sm border border-slate-200;
   }
 
   .custom-scrollbar::-webkit-scrollbar {
@@ -76,25 +76,6 @@
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-slate-200 dark:bg-slate-800 rounded-full;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #020617;
-    /* Slate 950 */
-    --foreground: #f8fafc;
-
-    --primary: #6366f1;
-    /* Indigo 500 */
-    --primary-foreground: #ffffff;
-
-    --card: #0f172a;
-    /* Slate 900 */
-    --card-foreground: #f8fafc;
-
-    --border: #1e293b;
-    /* Slate 800 */
+    @apply bg-slate-200 rounded-full;
   }
 }

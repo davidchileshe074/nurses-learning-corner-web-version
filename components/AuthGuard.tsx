@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/hooks/useAuthStore';
 
-const publicRoutes = ['/login', '/signup', '/forgot-password', '/onboarding'];
+const publicRoutes = ['/login', '/signup', '/forgot-password', '/onboarding', '/reset-password', '/verify-otp'];
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isLoading, checkSession } = useAuthStore();

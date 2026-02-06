@@ -22,6 +22,7 @@ import { noteServices } from '@/services/notes';
 import { subscriptionServices } from '@/services/subscription';
 import { useRouter } from 'next/navigation';
 import { activityServices } from '@/services/activity';
+import { addToRecent } from '@/services/recentStudy';
 
 export default function ContentDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -168,6 +169,9 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ id: s
             title: content.title,
             subject: content.subject
         }).catch(err => console.error('Failed to log activity:', err));
+
+        // Track in recent study (Local Storage)
+        addToRecent(content).catch(err => console.error('Failed to add to recent:', err));
     };
 
     if (isLoading) {
