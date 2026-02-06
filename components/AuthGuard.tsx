@@ -4,10 +4,10 @@ import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/hooks/useAuthStore';
 
-const publicRoutes = ['/login', '/signup', '/forgot-password', '/onboarding', '/reset-password', '/verify-otp'];
+const publicRoutes = ['/login', '/signup', '/forgot-password', '/onboarding', '/reset-password', '/verify-otp', '/pending-approval'];
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-    const { user, isLoading, checkSession } = useAuthStore();
+    const { user, profile, isLoading, checkSession } = useAuthStore();
     const router = useRouter();
     const pathname = usePathname();
 
@@ -19,13 +19,29 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         if (!isLoading) {
             const isPublicRoute = publicRoutes.some(route => pathname?.startsWith(route));
 
-            if (!user && !isPublicRoute) {
-                router.push('/login');
-            } else if (user && isPublicRoute) {
-                router.push('/');
+            if (!user) {
+                if (!isPublicRoute) {
+                    router.push('/login');
+                }
+            } else {
+                // User is logged in
+                const isVerified = profile?.verified || user.emailVerification;
+                const isAdminApproved = profile?.adminApproved;
+
+                if (!isVerified && pathname !== '/verify-otp') {
+                    router.push('/verify-otp');
+                } else if (isVerified && pathname === '/verify-otp') {
+                    router.push('/');
+                } else if (isVerified && !isAdminApproved && !isPublicRoute && pathname !== '/pending-approval' && pathname !== '/support') {
+                    router.push('/pending-approval');
+                } else if (isVerified && isAdminApproved && pathname === '/pending-approval') {
+                    router.push('/');
+                } else if (isVerified && isPublicRoute && pathname !== '/verify-otp' && pathname !== '/pending-approval') {
+                    router.push('/');
+                }
             }
         }
-    }, [user, isLoading, pathname, router]);
+    }, [user, profile, isLoading, pathname, router]);
 
     if (isLoading) {
         return (

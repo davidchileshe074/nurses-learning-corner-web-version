@@ -47,7 +47,7 @@ export function Navigation() {
     }, []);
 
     // Don't show navigation on specific pages
-    const hiddenPages = ['/login', '/signup', '/reset-password', '/forgot-password', '/onboarding', '/verify-otp'];
+    const hiddenPages = ['/login', '/signup', '/reset-password', '/forgot-password', '/onboarding', '/verify-otp', '/pending-approval'];
     if (hiddenPages.some(page => pathname.startsWith(page))) return null;
 
     if (isMobile) {

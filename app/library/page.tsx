@@ -6,6 +6,7 @@ import { Content, Program } from '@/types';
 import { ContentCard } from '@/components/ContentCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/hooks/useAuthStore';
+import { useOffline } from '@/hooks/useOffline';
 import { storage, config } from '@/lib/appwrite';
 import { db } from '@/lib/db';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -59,6 +60,7 @@ export default function LibraryPage() {
 
     // -- State --
     const [allContent, setAllContent] = useState<Content[]>([]);
+    const isOffline = useOffline();
     const [isLoading, setIsLoading] = useState(true);
     const [isSubscribed, setIsSubscribed] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -91,8 +93,6 @@ export default function LibraryPage() {
             let fetchedDocuments: Content[] = [];
             let total = 0;
 
-            const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
-
             if (activeFilter === 'Downloads' || (isOffline && activeFilter === 'All')) {
                 // LOCAL INDEXEDDB FETCH
                 const downloads = await db.cachedContent.toArray();
@@ -106,10 +106,14 @@ export default function LibraryPage() {
                 if (isOffline && activeFilter === 'All' && fetchedDocuments.length === 0) {
                     console.warn('[Offline] No local content found.');
                 }
-            } else if (isOffline) {
-                // Trying to access remote filter while offline
-                fetchedDocuments = [];
-                total = 0;
+            } else if (isOffline && activeFilter !== 'Downloads') {
+                // Trying to access remote filter while offline - fallback to downloads
+                const downloads = await db.cachedContent.toArray();
+                fetchedDocuments = (downloads as any[]).filter(d => {
+                    if (activeSubject && d.subject !== activeSubject) return false;
+                    return true;
+                });
+                total = fetchedDocuments.length;
                 setHasMore(false);
             } else {
                 // REMOTE APPWRITE FETCH
@@ -139,11 +143,11 @@ export default function LibraryPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [user, profile?.program, activeSubject, activeFilter, showAll, offset]);
+    }, [user, profile?.program, activeSubject, activeFilter, showAll, offset, isOffline]);
 
     useEffect(() => {
         fetchLibraryData(true);
-    }, [activeSubject, activeFilter, showAll]);
+    }, [activeSubject, activeFilter, showAll, isOffline]);
 
     // -- Client-side Search Filtering --
     const displayedContent = useMemo(() => {

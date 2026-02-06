@@ -52,7 +52,7 @@ export default function SignupPage() {
                     whatsappNumber: whatsappNumber,
                     yearOfStudy: yearOfStudy,
                     verified: false,
-                    adminApproved: false,
+                    adminApproved: true,
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
                 }
@@ -60,7 +60,15 @@ export default function SignupPage() {
 
             await checkSession();
 
-            // 4. Handle Access Code (Optional)
+            // 4. Trigger Email Verification
+            try {
+                const { sendEmailOTP } = await import('@/services/auth');
+                await sendEmailOTP(email, user.$id);
+            } catch (otpErr: any) {
+                console.warn('[Signup] Failed to trigger verification email:', otpErr.message);
+            }
+
+            // 5. Handle Access Code (Optional)
             if (accessCode.trim()) {
                 try {
                     const { accessCodeServices } = await import('@/services/accessCodes');
@@ -68,12 +76,10 @@ export default function SignupPage() {
                     console.log('[Signup] Access code redeemed successfully.');
                 } catch (codeErr: any) {
                     console.warn('[Signup] Access code redemption failed, but account was created:', codeErr.message);
-                    // We don't block registration if the optional code fails, 
-                    // but we might want to notify the user later.
                 }
             }
 
-            router.push('/');
+            router.push(`/verify-otp?email=${encodeURIComponent(email)}`);
         } catch (err: any) {
             setError(err.message || 'Registration sequence interrupted.');
         } finally {
