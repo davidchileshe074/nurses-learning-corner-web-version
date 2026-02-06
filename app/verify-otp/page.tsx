@@ -12,7 +12,7 @@ import { Query } from 'appwrite';
 function VerifyOTPForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { user, refreshProfile } = useAuthStore();
+    const { user, profile, refreshProfile } = useAuthStore();
 
     // Get email from search params or current user
     const paramEmail = searchParams.get('email');
@@ -26,6 +26,13 @@ function VerifyOTPForm() {
     const [resendLoading, setResendLoading] = useState(false);
 
     useEffect(() => {
+        // 1. If user is already verified, bypass this page
+        const isVerified = profile?.verified || user?.emailVerification;
+        if (isVerified) {
+            router.push('/');
+            return;
+        }
+
         const sendCode = async () => {
             if (!email) return;
             try {
@@ -39,7 +46,7 @@ function VerifyOTPForm() {
         if (email && !tempUserId) {
             sendCode();
         }
-    }, [email, user?.$id]);
+    }, [email, user?.$id, profile, user?.emailVerification, router]);
 
     const handleChange = (index: number, value: string) => {
         if (!/^\d*$/.test(value)) return;
