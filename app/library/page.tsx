@@ -91,7 +91,9 @@ export default function LibraryPage() {
             let fetchedDocuments: Content[] = [];
             let total = 0;
 
-            if (activeFilter === 'Downloads') {
+            const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+
+            if (activeFilter === 'Downloads' || (isOffline && activeFilter === 'All')) {
                 // LOCAL INDEXEDDB FETCH
                 const downloads = await db.cachedContent.toArray();
                 fetchedDocuments = (downloads as any[]).filter(d => {
@@ -99,6 +101,15 @@ export default function LibraryPage() {
                     return true;
                 });
                 total = fetchedDocuments.length;
+                setHasMore(false);
+
+                if (isOffline && activeFilter === 'All' && fetchedDocuments.length === 0) {
+                    console.warn('[Offline] No local content found.');
+                }
+            } else if (isOffline) {
+                // Trying to access remote filter while offline
+                fetchedDocuments = [];
+                total = 0;
                 setHasMore(false);
             } else {
                 // REMOTE APPWRITE FETCH

@@ -9,6 +9,9 @@ const withPWA = withPWAInit({
   cacheOnFrontEndNav: true,
   aggressiveFrontEndNavCaching: true,
   reloadOnOnline: true,
+  fallbacks: {
+    document: "/offline",
+  },
 
   workboxOptions: {
     skipWaiting: true,

@@ -52,24 +52,28 @@ export function Navigation() {
 
     if (isMobile) {
         return (
-            <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 flex justify-around items-center h-16 pb-safe">
-                {NAV_ITEMS.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
-                    return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            className={`flex flex-col items-center justify-center w-full h-full transition-colors ${isActive
-                                ? 'text-[#2B669A]'
-                                : 'text-slate-400 hover:text-[#2B669A]'
-                                }`}
-                        >
-                            <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
-                            <span className="text-[10px] font-medium mt-1 uppercase tracking-wide">{item.label}</span>
-                        </Link>
-                    );
-                })}
+            <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 safe-bottom">
+                <div className="flex justify-around items-center h-20 px-2">
+                    {NAV_ITEMS.map((item) => {
+                        const Icon = item.icon;
+                        const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                className={`flex flex-col items-center justify-center flex-1 gap-1.5 py-2 transition-colors ${isActive
+                                    ? 'text-[#2B669A]'
+                                    : 'text-slate-400 hover:text-[#2B669A]'
+                                    }`}
+                            >
+                                <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+                                <span className={`text-[9px] font-bold uppercase tracking-tight text-center ${isActive ? 'opacity-100' : 'opacity-80'}`}>
+                                    {item.label}
+                                </span>
+                            </Link>
+                        );
+                    })}
+                </div>
             </nav>
         );
     }

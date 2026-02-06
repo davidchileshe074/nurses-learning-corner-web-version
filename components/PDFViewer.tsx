@@ -8,8 +8,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { noteServices } from '@/services/notes';
 import { NoteEditor } from './NoteEditor';
 
-// Set worker for react-pdf with optimized settings
-pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+// Set worker for react-pdf with optimized settings for offline support
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    'pdfjs-dist/build/pdf.worker.min.mjs',
+    import.meta.url,
+).toString();
 
 interface PDFViewerProps {
     url: string;
@@ -74,9 +77,12 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
     }, [pageNumber, numPages, onClose]);
 
     return (
-        <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col">
+        <div
+            className="fixed inset-0 z-50 bg-slate-950 flex flex-col overflow-hidden"
+            style={{ height: '100dvh', overscrollBehavior: 'none' }}
+        >
             {/* Top Bar */}
-            <div className="h-16 px-6 bg-slate-900 border-b border-slate-800 flex items-center justify-between shrink-0">
+            <div className="h-14 sm:h-16 px-4 sm:px-6 bg-slate-900/50 backdrop-blur-lg border-b border-white/5 flex items-center justify-between shrink-0 safe-top">
                 <div className="flex items-center gap-4">
                     <button
                         onClick={onClose}
@@ -146,9 +152,10 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
             {/* Main Layout (Split) */}
             <div className="flex-1 flex overflow-hidden">
                 {/* PDF Area */}
-                <div className={`flex-1 overflow-auto bg-slate-950 p-4 sm:p-8 flex flex-col items-center custom-scrollbar transition-all duration-500 ${showNotes ? 'lg:border-r lg:border-slate-800' : ''}`}>
+                {/* PDF Area */}
+                <div className={`flex-1 overflow-auto bg-slate-950 p-0 sm:p-8 flex flex-col items-center custom-scrollbar transition-all duration-500 ${showNotes ? 'lg:border-r lg:border-slate-800' : ''}`}>
                     {loadError ? (
-                        <div className="flex flex-col items-center gap-4 mt-20 text-center">
+                        <div className="flex-1 flex flex-col items-center justify-center min-h-[50vh] gap-4 text-center px-6">
                             <div className="w-20 h-20 bg-red-900/20 rounded-full flex items-center justify-center">
                                 <svg className="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -168,35 +175,36 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
                             onLoadSuccess={onDocumentLoadSuccess}
                             onLoadError={onDocumentLoadError}
                             loading={
-                                <div className="flex flex-col items-center gap-4 mt-20 text-center">
-                                    <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                                <div className="flex-1 flex flex-col items-center justify-center min-h-[50vh] gap-4 text-center px-6">
+                                    <div className="w-12 h-12 border-4 border-[#2B669A] border-t-transparent rounded-full animate-spin"></div>
                                     <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Preparing Scientific Assets...</p>
-                                    <p className="text-slate-600 text-xs">Optimizing for fast rendering</p>
+                                    <p className="text-slate-600 text-xs text-center">Optimizing for fast rendering</p>
                                 </div>
                             }
                             options={{
                                 cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
                                 cMapPacked: true,
                                 standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/standard_fonts/`,
-                                // Performance optimizations
                                 enableXfa: false,
                                 isEvalSupported: false,
                             }}
-                            className="shadow-2xl shadow-black/80 flex flex-col items-center min-h-full"
+                            className="flex-1 flex flex-col items-center justify-center min-h-full w-full"
                         >
-                            <Page
-                                pageNumber={pageNumber}
-                                scale={showNotes ? scale * 0.75 : scale}
-                                width={typeof window !== 'undefined' ? Math.min(window.innerWidth * 0.9, 1200) : undefined}
-                                renderAnnotationLayer={true}
-                                renderTextLayer={true}
-                                className="rounded-lg overflow-hidden !bg-slate-900"
-                                loading={
-                                    <div className="flex items-center justify-center h-[800px]">
-                                        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                                    </div>
-                                }
-                            />
+                            <div className="flex-1 flex items-center justify-center w-full min-h-full py-12">
+                                <Page
+                                    pageNumber={pageNumber}
+                                    scale={showNotes ? scale * 0.75 : scale}
+                                    width={typeof window !== 'undefined' ? (window.innerWidth < 640 ? window.innerWidth : Math.min(window.innerWidth * 0.9, 1200)) : undefined}
+                                    renderAnnotationLayer={true}
+                                    renderTextLayer={true}
+                                    className="overflow-hidden !bg-slate-900 shadow-2xl shadow-black/80"
+                                    loading={
+                                        <div className="flex items-center justify-center h-[800px]">
+                                            <div className="w-8 h-8 border-4 border-[#2B669A] border-t-transparent rounded-full animate-spin"></div>
+                                        </div>
+                                    }
+                                />
+                            </div>
                         </Document>
                     )}
                 </div>

@@ -50,7 +50,7 @@ export default function DownloadsPage() {
     const handleDeleteDownload = async (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
         if (confirm('Delete this resource from your local clinical storage?')) {
-            await db.cachedContent.where('$id').equals(id).delete();
+            await db.cachedContent.delete(id);
             fetchDownloadedItems();
         }
     };

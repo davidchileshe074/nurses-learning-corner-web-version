@@ -8,11 +8,12 @@ import { db } from '@/lib/db';
 import { useAuthStore } from '@/hooks/useAuthStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import dynamic from 'next/dynamic';
+import { ArrowLeft, Download, BookOpen, CheckCircle, Clock, Calendar } from 'lucide-react';
 
 const PDFViewer = dynamic(() => import('@/components/PDFViewer').then(mod => mod.PDFViewer), {
     loading: () => (
         <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
-            <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <div className="w-16 h-16 border-4 border-[#2B669A] border-t-transparent rounded-full animate-spin mb-4"></div>
             <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Loading Reader Engine...</p>
         </div>
     ),
@@ -46,7 +47,7 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ id: s
             setIsLoading(true);
             try {
                 // 1. Try to get from Cache first (for offline support)
-                const cached = await db.cachedContent.where('$id').equals(id).first();
+                const cached = await db.cachedContent.get(id);
 
                 if (cached) {
                     setContent(cached);
@@ -57,8 +58,8 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ id: s
                     setContent(data);
 
                     // Also check if already downloaded by $id
-                    const isAlreadyDownloaded = await db.cachedContent.where('$id').equals(id).count();
-                    setIsDownloaded(isAlreadyDownloaded > 0);
+                    const isAlreadyDownloaded = await db.cachedContent.get(id);
+                    setIsDownloaded(!!isAlreadyDownloaded);
                 }
             } catch (error) {
                 console.error('Failed to load content details:', error);
@@ -120,13 +121,21 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ id: s
     const handleOpenReader = async (forceStartFresh = false) => {
         if (!content || !user) return;
 
-        // Subscription Check
-        const sub = await subscriptionServices.getSubscriptionStatus(user.$id);
-        const isActive = subscriptionServices.checkSubscriptionExpiry(sub);
+        // Subscription Check (Bypassed if offline and content is downloaded)
+        const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+        const cached = await db.cachedContent.get(content.$id);
 
-        if (!isActive) {
-            alert('An active subscription is required to access premium clinical resources.');
-            router.push('/profile');
+        if (!isOffline) {
+            const sub = await subscriptionServices.getSubscriptionStatus(user.$id);
+            const isActive = subscriptionServices.checkSubscriptionExpiry(sub);
+
+            if (!isActive && !cached) {
+                alert('An active subscription is required to access premium clinical resources.');
+                router.push('/profile');
+                return;
+            }
+        } else if (!cached) {
+            alert('This resource is not available offline. Please connect to the internet to access it.');
             return;
         }
 
@@ -141,7 +150,6 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ id: s
         }
 
         const fileId = content.fileId || (content as any).storageFileId;
-        const cached = await db.cachedContent.where('$id').equals(content.$id).first();
         let url = '';
 
         if (cached && cached.blob instanceof Blob) {
@@ -176,20 +184,20 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ id: s
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
-                <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Accessing Archives...</p>
+            <div className="min-h-screen bg-[#F3F5F7] flex flex-col items-center justify-center p-6 text-center">
+                <div className="w-16 h-16 border-4 border-[#2B669A] border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Loading content...</p>
             </div>
         );
     }
 
     if (!content) {
         return (
-            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
-                <h1 className="text-2xl font-black text-slate-900 dark:text-white mb-4">Resource Not Found</h1>
+            <div className="min-h-screen bg-[#F3F5F7] flex flex-col items-center justify-center p-6 text-center">
+                <h1 className="text-2xl font-bold text-slate-900 mb-4">Resource Not Found</h1>
                 <button
                     onClick={() => router.back()}
-                    className="px-6 py-3 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest"
+                    className="px-6 py-3 bg-[#2B669A] text-white rounded-xl font-bold text-sm hover:bg-[#234f7a] transition-all"
                 >
                     Go Back
                 </button>
@@ -198,133 +206,123 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ id: s
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20">
-            {/* Hero Section */}
-            <div className="relative h-96 bg-slate-900 flex items-center justify-center overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-b from-blue-600/20 to-slate-950/90 z-10"></div>
-
-                {/* Background Pattern */}
-                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 0)', backgroundSize: '40px 40px' }}></div>
-
-                {/* Content Icon/Thumbnail Placeholder */}
-                <div className="relative z-20 flex flex-col items-center">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.8, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        className="w-32 h-32 bg-white/10 backdrop-blur-xl rounded-[40px] border border-white/20 flex items-center justify-center mb-6"
-                    >
-                        <svg className="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                    </motion.div>
-                </div>
-
-                {/* Navigation Bar */}
-                <div className="absolute top-0 left-0 right-0 z-30 p-6 flex items-center justify-between">
+        <div className="min-h-screen bg-[#F3F5F7] pb-20">
+            {/* Header */}
+            <div className="bg-white border-b border-slate-200 sticky top-0 z-30">
+                <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-4">
                     <button
                         onClick={() => router.back()}
-                        className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center text-white border border-white/20 hover:bg-white/20 transition-all"
+                        className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-all"
                     >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
+                        <ArrowLeft size={20} />
                     </button>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-[#2B669A] uppercase tracking-wide truncate">
+                            {content.subject}
+                        </p>
+                    </div>
                 </div>
             </div>
 
-            {/* Info Section */}
-            <div className="max-w-4xl mx-auto px-6 -mt-32 relative z-20">
+            {/* Content */}
+            <div className="max-w-4xl mx-auto px-6 py-8">
                 <motion.div
-                    initial={{ opacity: 0, y: 40 }}
+                    initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="bg-white dark:bg-slate-900 rounded-[40px] shadow-2xl shadow-slate-950/10 dark:shadow-black/50 p-8 md:p-12 border border-white dark:border-slate-800"
+                    className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"
                 >
-                    <div className="flex flex-wrap items-center gap-3 mb-6">
-                        <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-200 dark:border-blue-900/50">
-                            {content.program}
-                        </span>
-                        <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-full text-[10px] font-black uppercase tracking-widest">
-                            {content.subject}
-                        </span>
-                        {isDownloaded && (
-                            <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-green-200 dark:border-green-900/50 flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
-                                Available Offline
-                            </span>
-                        )}
+                    {/* Hero Section */}
+                    <div className="relative bg-gradient-to-br from-[#2B669A] to-[#1e4a6f] p-8 md:p-12">
+                        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 0)', backgroundSize: '20px 20px' }}></div>
+
+                        <div className="relative z-10">
+                            {/* Badges */}
+                            <div className="flex flex-wrap items-center gap-2 mb-6">
+                                <span className="px-3 py-1 bg-white/20 backdrop-blur-sm text-white rounded-full text-[10px] font-bold uppercase tracking-wide border border-white/30">
+                                    {content.program}
+                                </span>
+                                <span className="px-3 py-1 bg-white/20 backdrop-blur-sm text-white rounded-full text-[10px] font-bold uppercase tracking-wide border border-white/30">
+                                    {content.type}
+                                </span>
+                                {isDownloaded && (
+                                    <span className="px-3 py-1 bg-green-500/20 backdrop-blur-sm text-green-100 rounded-full text-[10px] font-bold uppercase tracking-wide border border-green-400/30 flex items-center gap-1.5">
+                                        <span className="w-1.5 h-1.5 bg-green-300 rounded-full animate-pulse"></span>
+                                        Available Offline
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* Title */}
+                            <h1 className="text-3xl md:text-4xl font-bold text-white mb-4 leading-tight">
+                                {content.title}
+                            </h1>
+
+                            {/* Meta Info */}
+                            <div className="flex flex-wrap items-center gap-4 text-white/80 text-sm">
+                                <div className="flex items-center gap-2">
+                                    <Calendar size={16} />
+                                    <span>{new Date(content.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <h1 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white mb-6 tracking-tight leading-tight">
-                        {content.title}
-                    </h1>
-
-                    <div className="prose dark:prose-invert max-w-none">
-                        <p className="text-slate-600 dark:text-slate-400 text-lg leading-relaxed font-medium">
+                    {/* Description */}
+                    <div className="p-8 md:p-12">
+                        <p className="text-slate-600 text-base leading-relaxed mb-8">
                             {content.description || 'No detailed description available for this resource. This clinical material is designed to support healthcare professionals in their educational journey.'}
                         </p>
-                    </div>
 
-                    {/* Meta Stats */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mt-12 py-8 border-t border-slate-100 dark:border-slate-800">
-                        <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Type</p>
-                            <p className="font-bold text-slate-700 dark:text-slate-200 uppercase">{content.type}</p>
+                        {/* Actions */}
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            <button
+                                onClick={() => handleOpenReader()}
+                                className="flex-1 py-4 bg-[#2B669A] hover:bg-[#234f7a] text-white rounded-xl font-bold text-sm uppercase tracking-wide shadow-lg shadow-[#2B669A]/20 transition-all flex items-center justify-center gap-2"
+                            >
+                                <BookOpen size={20} />
+                                Open Material
+                            </button>
+
+                            <button
+                                onClick={handleDownload}
+                                disabled={isDownloaded || isDownloading}
+                                className={`flex-1 py-4 rounded-xl font-bold text-sm uppercase tracking-wide border-2 transition-all flex items-center justify-center gap-2 ${isDownloaded
+                                    ? 'bg-green-50 border-green-200 text-green-600 cursor-default'
+                                    : isDownloading
+                                        ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-wait'
+                                        : 'bg-white border-slate-200 text-slate-700 hover:border-[#2B669A] hover:text-[#2B669A]'
+                                    }`}
+                            >
+                                {isDownloading ? (
+                                    <>
+                                        <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                                        Downloading...
+                                    </>
+                                ) : isDownloaded ? (
+                                    <>
+                                        <CheckCircle size={20} />
+                                        Downloaded
+                                    </>
+                                ) : (
+                                    <>
+                                        <Download size={20} />
+                                        Download
+                                    </>
+                                )}
+                            </button>
                         </div>
-                        <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Added</p>
-                            <p className="font-bold text-slate-700 dark:text-slate-200">{new Date(content.createdAt).toLocaleDateString()}</p>
-                        </div>
+
+                        {isDownloaded && (
+                            <motion.button
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                onClick={() => router.push('/downloads')}
+                                className="mt-4 w-full py-3 bg-slate-50 text-slate-600 rounded-xl font-bold text-xs uppercase tracking-wide hover:bg-slate-100 transition-all"
+                            >
+                                View in Downloads
+                            </motion.button>
+                        )}
                     </div>
-
-                    {/* Actions */}
-                    <div className="flex flex-col sm:flex-row gap-4 mt-12">
-                        <button
-                            onClick={() => handleOpenReader()}
-                            className="flex-1 py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-3xl font-black uppercase text-sm tracking-widest shadow-xl shadow-blue-600/20 active:scale-95 transition-all flex items-center justify-center gap-3"
-                        >
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                            </svg>
-                            Open Material
-                        </button>
-
-                        <button
-                            onClick={handleDownload}
-                            disabled={isDownloaded || isDownloading}
-                            className={`flex-1 py-5 rounded-3xl font-black uppercase text-sm tracking-widest border-2 active:scale-95 transition-all flex items-center justify-center gap-3 ${isDownloaded
-                                ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-900/30 text-green-600'
-                                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white hover:border-blue-600 hover:text-blue-600'
-                                }`}
-                        >
-                            {isDownloading ? (
-                                <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                            ) : isDownloaded ? (
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                </svg>
-                            ) : (
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                </svg>
-                            )}
-                            {isDownloading ? 'Caching...' : isDownloaded ? 'Available Offline' : 'Download Offline'}
-                        </button>
-                    </div>
-
-                    {isDownloaded && (
-                        <motion.button
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            onClick={() => router.push('/downloads')}
-                            className="mt-6 w-full py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2"
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                            </svg>
-                            View in Downloads
-                        </motion.button>
-                    )}
                 </motion.div>
             </div>
 
@@ -338,43 +336,36 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ id: s
                         className="fixed inset-0 z-[110] flex items-center justify-center px-6 bg-slate-950/80 backdrop-blur-md"
                     >
                         <motion.div
-                            initial={{ scale: 0.9, y: 20 }}
+                            initial={{ scale: 0.95, y: 20 }}
                             animate={{ scale: 1, y: 0 }}
-                            className="bg-white dark:bg-slate-900 rounded-[48px] p-10 max-w-md w-full shadow-2xl border border-white dark:border-slate-800 text-center relative overflow-hidden"
+                            exit={{ scale: 0.95, y: 20 }}
+                            className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl text-center"
                         >
-                            {/* Decorative background element */}
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 rounded-full -mr-10 -mt-10 blur-2xl"></div>
-
-                            <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/30 rounded-[35%] flex items-center justify-center mx-auto mb-8 text-blue-600 relative z-10">
-                                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                                </svg>
+                            <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-6 text-[#2B669A]">
+                                <Clock size={32} />
                             </div>
 
-                            <h3 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic leading-none mb-3">Resume Prep?</h3>
-                            <p className="text-slate-500 dark:text-slate-400 font-bold text-[10px] uppercase tracking-[3px] mb-10">
-                                You left off at Page {savedPage}
+                            <h3 className="text-2xl font-bold text-slate-900 mb-2">Resume Reading?</h3>
+                            <p className="text-slate-500 text-sm mb-8">
+                                You left off at page <span className="font-bold text-[#2B669A]">{savedPage}</span>
                             </p>
 
-                            <div className="flex flex-col gap-4 relative z-10">
+                            <div className="flex flex-col gap-3">
                                 <button
                                     onClick={() => handleOpenReader(false)}
-                                    className="py-5 bg-blue-600 rounded-3xl font-black uppercase text-xs tracking-[2px] text-white shadow-xl shadow-blue-600/20 hover:bg-blue-700 transition-all active:scale-95 flex items-center justify-center gap-3"
+                                    className="py-4 bg-[#2B669A] rounded-xl font-bold text-sm uppercase tracking-wide text-white hover:bg-[#234f7a] transition-all"
                                 >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                                    </svg>
-                                    Continue Learning
+                                    Continue Reading
                                 </button>
                                 <button
                                     onClick={() => handleOpenReader(true)}
-                                    className="py-5 bg-slate-100 dark:bg-slate-800 rounded-3xl font-black uppercase text-[10px] tracking-widest text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                                    className="py-4 bg-slate-100 rounded-xl font-bold text-sm uppercase tracking-wide text-slate-600 hover:bg-slate-200 transition-all"
                                 >
-                                    Start Fresh
+                                    Start from Beginning
                                 </button>
                                 <button
                                     onClick={() => setShowResumeModal(false)}
-                                    className="mt-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors"
+                                    className="mt-2 text-sm font-medium text-slate-400 hover:text-slate-600 transition-colors"
                                 >
                                     Cancel
                                 </button>

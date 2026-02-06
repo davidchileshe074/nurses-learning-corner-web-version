@@ -26,7 +26,7 @@ export function ContentCard({ content, onPress, onDownload }: ContentCardProps) 
 
     useEffect(() => {
         async function checkStatus() {
-            const cached = await db.cachedContent.where('$id').equals(content.$id).first();
+            const cached = await db.cachedContent.get(content.$id);
             setIsDownloaded(!!cached);
         }
         checkStatus();

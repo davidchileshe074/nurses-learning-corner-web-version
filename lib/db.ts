@@ -18,7 +18,7 @@ export class MyDatabase extends Dexie {
     constructor() {
         super('NurseCornerDB');
         this.version(1).stores({
-            cachedContent: '++id, $id, title, subject, program, type',
+            cachedContent: '$id, title, subject, program, type',
             syncQueue: '++id, type, payload, timestamp'
         });
     }

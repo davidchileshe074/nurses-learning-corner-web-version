@@ -21,8 +21,8 @@ export const downloadServices = {
      */
     async getIsDownloaded(contentId: string): Promise<boolean> {
         try {
-            const count = await db.cachedContent.where('$id').equals(contentId).count();
-            return count > 0;
+            const item = await db.cachedContent.get(contentId);
+            return !!item;
         } catch (error) {
             console.error('[Download] Status check failed:', error);
             return false;
@@ -72,7 +72,7 @@ export const downloadServices = {
     async preloadContent(content: Content, fileUrl: string): Promise<boolean> {
         try {
             // Check if already cached
-            const existing = await db.cachedContent.where('$id').equals(content.$id).first();
+            const existing = await db.cachedContent.get(content.$id);
             if (existing) {
                 console.log('[Preload] Content already cached:', content.title);
                 return true;
@@ -114,7 +114,7 @@ export const downloadServices = {
      */
     async removeCachedContent(contentId: string): Promise<boolean> {
         try {
-            await db.cachedContent.where('$id').equals(contentId).delete();
+            await db.cachedContent.delete(contentId);
             // Also clear progress
             localStorage.removeItem(`pos_${contentId}`);
             localStorage.removeItem(`time_${contentId}`);
