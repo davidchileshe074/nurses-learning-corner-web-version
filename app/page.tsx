@@ -37,6 +37,7 @@ import {
     WifiOff,
     Cloud
 } from 'lucide-react';
+import { client, config } from '@/lib/appwrite';
 import { useOffline } from '@/hooks/useOffline';
 
 const MEDICAL_TERMS = [
@@ -254,7 +255,7 @@ export default function Home() {
                 subjectsCount: uniqueSubjects.length
             });
 
-            setHasUnread(notifications.some(n => !n.isRead));
+            setHasUnread(notifications.some(n => !n.read));
 
             // INTEGRATION: Mobile Logic Port
             // 1. Digital Nursing Alerts
@@ -278,6 +279,49 @@ export default function Home() {
     useEffect(() => {
         fetchData();
     }, [fetchData]);
+
+    // Realtime Notifications Listener
+    useEffect(() => {
+        if (!user) return;
+
+        const unsubscribe = client.subscribe(
+            `databases.${config.databaseId}.collections.${config.notificationsCollectionId}.documents`,
+            response => {
+                // Check if the event is relevant to the current user
+                if (response.payload && (response.payload as any).userId === user.$id) {
+                    notificationServices.getNotifications(user.$id).then(notifications => {
+                        setHasUnread(notifications.some(n => !n.read));
+                    });
+                }
+            }
+        );
+
+        return () => {
+            unsubscribe();
+        };
+    }, [user]);
+
+    // Realtime Subscription Listener
+    useEffect(() => {
+        if (!user) return;
+
+        const unsubscribe = client.subscribe(
+            `databases.${config.databaseId}.collections.${config.subscriptionsCollectionId}.documents`,
+            response => {
+                // Check if the event is relevant to the current user
+                if (response.payload && (response.payload as any).userId === user.$id) {
+                    console.log('Subscription update detected', response);
+                    subscriptionServices.getSubscriptionStatus(user.$id).then(sub => {
+                        setSubscription(sub);
+                    });
+                }
+            }
+        );
+
+        return () => {
+            unsubscribe();
+        };
+    }, [user]);
 
     const daysRemaining = useMemo(() => {
         if (!subscription?.endDate) return null;

@@ -5,10 +5,12 @@ import { subscriptionServices } from '@/services/subscription';
 import { Subscription } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatProgram, formatYear } from '@/lib/formatters';
+import Link from 'next/link';
+import { client, config } from '@/lib/appwrite';
 import {
     User,
     ShieldCheck,
-   
+    LayoutDashboard,
     Settings,
     LogOut,
     ChevronRight,
@@ -63,6 +65,22 @@ export default function ProfilePage() {
         }
 
         return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    }, [user]);
+
+    // Realtime Subscription Listener
+    useEffect(() => {
+        if (!user) return;
+
+        const unsubscribe = client.subscribe(
+            `databases.${config.databaseId}.collections.${config.subscriptionsCollectionId}.documents`,
+            response => {
+                if ((response.payload as any).userId === user.$id) {
+                    subscriptionServices.getSubscriptionStatus(user.$id).then(setSubscription);
+                }
+            }
+        );
+
+        return () => unsubscribe();
     }, [user]);
 
     const handleInstallClick = async () => {
@@ -268,13 +286,13 @@ export default function ProfilePage() {
                         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Settings</p>
                     </div>
                     <div className="divide-y divide-slate-100">
-                        <button className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors group">
+                        <Link href="/" className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors group">
                             <div className="flex items-center gap-3">
-                                <Bell size={18} className="text-[#2B669A]" />
-                                <span className="font-medium text-slate-700 text-sm">Notifications</span>
+                                <LayoutDashboard size={18} className="text-[#2B669A]" />
+                                <span className="font-medium text-slate-700 text-sm">NLC Dashboard</span>
                             </div>
                             <ChevronRight size={16} className="text-slate-300 group-hover:text-[#2B669A]" />
-                        </button>
+                        </Link>
                         <button className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors group">
                             <div className="flex items-center gap-3">
                                 <Settings size={18} className="text-slate-600" />

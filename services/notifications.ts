@@ -26,17 +26,18 @@ export const notificationServices = {
 
     async addNotification(userId: string, notif: { title: string; message: string; type: string }) {
         try {
+            const notificationId = ID.unique();
             return await databases.createDocument(
                 config.databaseId,
                 config.notificationsCollectionId,
-                ID.unique(),
+                notificationId,
                 {
+                    notificationId: notificationId,
                     userId,
                     title: notif.title,
                     message: notif.message,
                     type: notif.type,
-                    isRead: false,
-                    createdAt: new Date().toISOString()
+                    read: false
                 }
             );
         } catch (error) {
@@ -50,7 +51,7 @@ export const notificationServices = {
                 config.databaseId,
                 config.notificationsCollectionId,
                 notificationId,
-                { isRead: true }
+                { read: true }
             );
         } catch (error) {
             console.error('Error marking notification as read:', error);

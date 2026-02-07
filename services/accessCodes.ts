@@ -110,8 +110,7 @@ export const accessCodeServices = {
                         subscriptionName: 'Premium Nurse Learning Corner',
                         startDate: startDate.toISOString(),
                         endDate: endDate.toISOString(),
-                        autoRenew: false,
-                        updatedAt: now.toISOString()
+                        autoRenew: false
                     }
                 );
             } else {
@@ -126,9 +125,7 @@ export const accessCodeServices = {
                         status: 'ACTIVE',
                         startDate: startDate.toISOString(),
                         endDate: endDate.toISOString(),
-                        autoRenew: false,
-                        createdAt: now.toISOString(),
-                        updatedAt: now.toISOString()
+                        autoRenew: false
                     }
                 );
             }

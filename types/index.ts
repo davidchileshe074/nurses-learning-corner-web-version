@@ -84,8 +84,8 @@ export interface AppNotification {
     title: string;
     message: string;
     type: 'system' | 'subscription' | 'content';
-    isRead: boolean;
-    createdAt: string;
+    read: boolean | null;
+    $createdAt: string;
 }
 
 export interface AccessCode {
@@ -98,5 +98,5 @@ export interface AccessCode {
     expirationDate?: string;
     subscriptionId?: string;
     plan?: string;
-    createdAt: string;
+
 }
