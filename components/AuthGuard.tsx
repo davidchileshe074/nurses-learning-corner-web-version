@@ -32,9 +32,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
                     router.push('/verify-otp');
                 } else if (isVerified && pathname === '/verify-otp') {
                     router.push('/');
-                } else if (isVerified && !isAdminApproved && !isPublicRoute && pathname !== '/pending-approval' && pathname !== '/support') {
-                    router.push('/pending-approval');
-                } else if (isVerified && isAdminApproved && pathname === '/pending-approval') {
+                } else if (isVerified && pathname === '/pending-approval') {
                     router.push('/');
                 } else if (isVerified && isPublicRoute && pathname !== '/verify-otp' && pathname !== '/pending-approval') {
                     router.push('/');
