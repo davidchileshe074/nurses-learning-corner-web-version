@@ -15,7 +15,7 @@ export default function SignupPage() {
     const [whatsappNumber, setWhatsappNumber] = useState('');
     const [yearOfStudy, setYearOfStudy] = useState('');
     const [program, setProgram] = useState('');
-    const [accessCode, setAccessCode] = useState('');
+
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
@@ -68,16 +68,7 @@ export default function SignupPage() {
                 console.warn('[Signup] Failed to trigger verification email:', otpErr.message);
             }
 
-            // 5. Handle Access Code (Optional)
-            if (accessCode.trim()) {
-                try {
-                    const { accessCodeServices } = await import('@/services/accessCodes');
-                    await accessCodeServices.validateAndRedeem(accessCode, user.$id);
-                    console.log('[Signup] Access code redeemed successfully.');
-                } catch (codeErr: any) {
-                    console.warn('[Signup] Access code redemption failed, but account was created:', codeErr.message);
-                }
-            }
+
 
             router.push(`/verify-otp?email=${encodeURIComponent(email)}`);
         } catch (err: any) {
@@ -204,25 +195,7 @@ export default function SignupPage() {
                             </div>
                         </div>
 
-                        {/* Institutional Access */}
-                        <div className="space-y-4">
-                            <h3 className="text-xs font-bold text-[#2B669A] uppercase tracking-wide border-b border-slate-100 pb-2">Access Credentials</h3>
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Access Code (Optional)</label>
-                                <input
-                                    type="text"
-                                    value={accessCode}
-                                    onChange={(e) => {
-                                        const val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/gi, '').slice(0, 12);
-                                        const parts = val.match(/.{1,4}/g) || [];
-                                        setAccessCode(parts.join('-'));
-                                    }}
-                                    className="w-full px-4 py-2.5 bg-white border border-slate-300 focus:border-[#2B669A] rounded-md outline-none transition-all text-sm font-bold text-slate-900 tracking-wider text-center"
-                                    placeholder="XXXX-XXXX-XXXX"
-                                />
-                                <p className="text-[10px] font-medium text-slate-400">Institutions may provide these for premium access.</p>
-                            </div>
-                        </div>
+
 
                         <button
                             type="submit"
