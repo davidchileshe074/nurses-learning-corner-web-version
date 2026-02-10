@@ -23,14 +23,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     checkSession: async () => {
         // 1. Initial hydration from localStorage for instant offline access
         if (typeof window !== 'undefined') {
-            const cachedUser = localStorage.getItem('nlc_user');
-            const cachedProfile = localStorage.getItem('nlc_profile');
-            if (cachedUser) {
-                set({
-                    user: JSON.parse(cachedUser),
-                    profile: cachedProfile ? JSON.parse(cachedProfile) : null,
-                    isLoading: false
-                });
+            try {
+                const cachedUser = localStorage.getItem('nlc_user');
+                const cachedProfile = localStorage.getItem('nlc_profile');
+                if (cachedUser) {
+                    set({
+                        user: JSON.parse(cachedUser),
+                        profile: cachedProfile ? JSON.parse(cachedProfile) : null,
+                        isLoading: false
+                    });
+                }
+            } catch (e) {
+                console.error('Failed to parse cached user data', e);
+                localStorage.removeItem('nlc_user');
+                localStorage.removeItem('nlc_profile');
             }
         }
 

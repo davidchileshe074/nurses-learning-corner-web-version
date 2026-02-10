@@ -71,16 +71,23 @@ export default function ProfilePage() {
     useEffect(() => {
         if (!user) return;
 
-        const unsubscribe = client.subscribe(
-            `databases.${config.databaseId}.collections.${config.subscriptionsCollectionId}.documents`,
-            response => {
-                if ((response.payload as any).userId === user.$id) {
-                    subscriptionServices.getSubscriptionStatus(user.$id).then(setSubscription);
+        let unsubscribe: (() => void) | null = null;
+        try {
+            unsubscribe = client.subscribe(
+                `databases.${config.databaseId}.collections.${config.subscriptionsCollectionId}.documents`,
+                response => {
+                    if ((response.payload as any).userId === user.$id) {
+                        subscriptionServices.getSubscriptionStatus(user.$id).then(setSubscription);
+                    }
                 }
-            }
-        );
+            );
+        } catch (err) {
+            console.warn('[Realtime] Subscription listener failed:', err);
+        }
 
-        return () => unsubscribe();
+        return () => {
+            try { unsubscribe?.(); } catch (_) { /* ignore cleanup errors */ }
+        };
     }, [user]);
 
     const handleInstallClick = async () => {

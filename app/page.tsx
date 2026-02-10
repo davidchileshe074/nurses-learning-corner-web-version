@@ -284,20 +284,25 @@ export default function Home() {
     useEffect(() => {
         if (!user) return;
 
-        const unsubscribe = client.subscribe(
-            `databases.${config.databaseId}.collections.${config.notificationsCollectionId}.documents`,
-            response => {
-                // Check if the event is relevant to the current user
-                if (response.payload && (response.payload as any).userId === user.$id) {
-                    notificationServices.getNotifications(user.$id).then(notifications => {
-                        setHasUnread(notifications.some(n => !n.read));
-                    });
+        let unsubscribe: (() => void) | null = null;
+        try {
+            unsubscribe = client.subscribe(
+                `databases.${config.databaseId}.collections.${config.notificationsCollectionId}.documents`,
+                response => {
+                    // Check if the event is relevant to the current user
+                    if (response.payload && (response.payload as any).userId === user.$id) {
+                        notificationServices.getNotifications(user.$id).then(notifications => {
+                            setHasUnread(notifications.some(n => !n.read));
+                        });
+                    }
                 }
-            }
-        );
+            );
+        } catch (err) {
+            console.warn('[Realtime] Notifications subscription failed:', err);
+        }
 
         return () => {
-            unsubscribe();
+            try { unsubscribe?.(); } catch (_) { /* ignore cleanup errors */ }
         };
     }, [user]);
 
@@ -305,21 +310,25 @@ export default function Home() {
     useEffect(() => {
         if (!user) return;
 
-        const unsubscribe = client.subscribe(
-            `databases.${config.databaseId}.collections.${config.subscriptionsCollectionId}.documents`,
-            response => {
-                // Check if the event is relevant to the current user
-                if (response.payload && (response.payload as any).userId === user.$id) {
-                    console.log('Subscription update detected', response);
-                    subscriptionServices.getSubscriptionStatus(user.$id).then(sub => {
-                        setSubscription(sub);
-                    });
+        let unsubscribe: (() => void) | null = null;
+        try {
+            unsubscribe = client.subscribe(
+                `databases.${config.databaseId}.collections.${config.subscriptionsCollectionId}.documents`,
+                response => {                   // Check if the event is relevant to the current user
+                    if (response.payload && (response.payload as any).userId === user.$id) {
+                        console.log('Subscription update detected', response);
+                        subscriptionServices.getSubscriptionStatus(user.$id).then(sub => {
+                            setSubscription(sub);
+                        });
+                    }
                 }
-            }
-        );
+            );
+        } catch (err) {
+            console.warn('[Realtime] Subscription listener failed:', err);
+        }
 
         return () => {
-            unsubscribe();
+            try { unsubscribe?.(); } catch (_) { /* ignore cleanup errors */ }
         };
     }, [user]);
 

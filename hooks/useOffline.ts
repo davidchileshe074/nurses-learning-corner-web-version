@@ -9,8 +9,10 @@ export function useOffline() {
     const [isOffline, setIsOffline] = useState(false);
 
     useEffect(() => {
-        // Initial check
-        setIsOffline(!navigator.onLine);
+        // Initial check - guard for SSR
+        if (typeof navigator !== 'undefined') {
+            setIsOffline(!navigator.onLine);
+        }
 
         const handleOnline = () => setIsOffline(false);
         const handleOffline = () => setIsOffline(true);

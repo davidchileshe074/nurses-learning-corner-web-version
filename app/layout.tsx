@@ -31,6 +31,7 @@ export const viewport: Viewport = {
 };
 
 import { Navigation } from "@/components/Navigation";
+import { GlobalErrorCatcher } from "@/components/GlobalErrorCatcher";
 
 export default function RootLayout({
   children,
@@ -47,6 +48,7 @@ export default function RootLayout({
         className={`${plusJakartaSans.variable} font-sans antialiased h-full bg-slate-50 text-slate-900`}
         suppressHydrationWarning={true}
       >
+        <GlobalErrorCatcher />
         <AuthGuard>
           <div className="flex min-h-screen">
             <Navigation />

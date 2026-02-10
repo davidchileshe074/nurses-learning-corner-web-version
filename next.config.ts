@@ -128,3 +128,4 @@ const nextConfig: NextConfig = {
 } as any;
 
 export default withPWA(nextConfig);
+
