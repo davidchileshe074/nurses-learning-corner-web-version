@@ -19,8 +19,12 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-export default function FlashcardListPage({ searchParams }: { searchParams: Promise<{ deckId: string }> }) {
-    const { deckId } = use(searchParams);
+import { Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+
+function FlashcardListContent() {
+    const searchParams = useSearchParams();
+    const deckId = searchParams.get('deckId');
     const { user } = useAuthStore();
     const router = useRouter();
     const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
@@ -37,10 +41,14 @@ export default function FlashcardListPage({ searchParams }: { searchParams: Prom
         if (user && deckId) {
             fetchCards();
             fetchDeckInfo();
+        } else if (!deckId) {
+            // Prevent infinite loading if deckId is missing
+            const timer = setTimeout(() => setIsLoading(false), 2000);
+            return () => clearTimeout(timer);
         }
     }, [user, deckId]);
 
-    const fetchDeckInfo = async () => {
+    async function fetchDeckInfo() {
         try {
             const decks = await flashcardServices.getUserDecks(user!.$id);
             const currentDeck = decks.find(d => d.$id === deckId);
@@ -52,10 +60,10 @@ export default function FlashcardListPage({ searchParams }: { searchParams: Prom
         }
     };
 
-    const fetchCards = async () => {
+    async function fetchCards() {
         setIsLoading(true);
         try {
-            const data = await flashcardServices.getFlashcards(deckId);
+            const data = await flashcardServices.getFlashcards(deckId!);
             setFlashcards(data);
         } catch (error) {
             console.error(error);
@@ -66,7 +74,7 @@ export default function FlashcardListPage({ searchParams }: { searchParams: Prom
 
     const handleAddCard = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!frontText.trim() || !backText.trim()) return;
+        if (!frontText.trim() || !backText.trim() || !deckId) return;
 
         setIsAdding(true);
         try {
@@ -96,6 +104,25 @@ export default function FlashcardListPage({ searchParams }: { searchParams: Prom
             }
         }
     };
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center p-6 text-center">
+                <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+        );
+    }
+
+    if (!deckId) {
+        return (
+            <div className="min-h-screen bg-white dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
+                <AlertCircle size={64} className="text-slate-300 mb-6" />
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic">Invalid Access</h3>
+                <p className="text-slate-500 mt-2">No deck identifier was provided for this clinical session.</p>
+                <button onClick={() => router.back()} className="mt-8 px-10 py-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest">Return to Laboratory</button>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-white dark:bg-slate-950">
@@ -153,13 +180,7 @@ export default function FlashcardListPage({ searchParams }: { searchParams: Prom
                 )}
 
                 {/* Cards List */}
-                {isLoading ? (
-                    <div className="space-y-6">
-                        {[1, 2, 3].map(i => (
-                            <div key={i} className="h-48 bg-slate-50 dark:bg-slate-900/50 animate-pulse rounded-[32px] border border-slate-100 dark:border-slate-800"></div>
-                        ))}
-                    </div>
-                ) : flashcards.length > 0 ? (
+                {flashcards.length > 0 ? (
                     <div className="space-y-6">
                         {flashcards.map((card, index) => (
                             <motion.div
@@ -310,5 +331,17 @@ export default function FlashcardListPage({ searchParams }: { searchParams: Prom
                 )}
             </AnimatePresence>
         </div>
+    );
+}
+
+export default function FlashcardListPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center p-6 text-center">
+                <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+        }>
+            <FlashcardListContent />
+        </Suspense>
     );
 }

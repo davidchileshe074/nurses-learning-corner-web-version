@@ -25,8 +25,12 @@ import { useRouter } from 'next/navigation';
 import { activityServices } from '@/services/activity';
 import { addToRecent } from '@/services/recentStudy';
 
-export default function ContentDetailsPage({ searchParams }: { searchParams: Promise<{ id: string }> }) {
-    const { id } = use(searchParams);
+import { Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+
+function ContentDetailsContent() {
+    const searchParams = useSearchParams();
+    const id = searchParams.get('id');
     const { user } = useAuthStore();
     const router = useRouter();
 
@@ -43,7 +47,12 @@ export default function ContentDetailsPage({ searchParams }: { searchParams: Pro
     const [savedPage, setSavedPage] = useState(1);
 
     useEffect(() => {
-        if (!id) return;
+        if (!id) {
+            // If No ID is present after hydration, we shouldn't show a spinner forever
+            const timer = setTimeout(() => setIsLoading(false), 2000);
+            return () => clearTimeout(timer);
+        }
+
         const loadPageData = async () => {
             setIsLoading(true);
             try {
@@ -401,5 +410,18 @@ export default function ContentDetailsPage({ searchParams }: { searchParams: Pro
                 )}
             </AnimatePresence>
         </div>
+    );
+}
+
+export default function ContentDetailsPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-[#F3F5F7] flex flex-col items-center justify-center p-6 text-center">
+                <div className="w-16 h-16 border-4 border-[#2B669A] border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Loading Reader...</p>
+            </div>
+        }>
+            <ContentDetailsContent />
+        </Suspense>
     );
 }

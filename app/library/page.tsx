@@ -85,7 +85,12 @@ export default function LibraryPage() {
 
     // -- Data Fetching --
     const fetchLibraryData = useCallback(async (isInitial = true) => {
-        if (!user) return;
+        if (!user) {
+            // If user isn't available yet, we shouldn't be stuck in loading
+            // AuthGuard handles redirect, but we prevent spinner hang
+            if (allContent.length === 0) setIsLoading(false);
+            return;
+        }
         setIsLoading(true);
 
         try {

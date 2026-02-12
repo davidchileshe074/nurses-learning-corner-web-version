@@ -20,8 +20,12 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-export default function FlashcardStudyPage({ searchParams }: { searchParams: Promise<{ deckId: string }> }) {
-    const { deckId } = use(searchParams);
+import { Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+
+function FlashcardStudyContent() {
+    const searchParams = useSearchParams();
+    const deckId = searchParams.get('deckId');
     const { user } = useAuthStore();
     const router = useRouter();
 
@@ -36,11 +40,16 @@ export default function FlashcardStudyPage({ searchParams }: { searchParams: Pro
     const [deckTitle, setDeckTitle] = useState('Study Session');
 
     useEffect(() => {
-        if (!deckId) return;
+        if (!deckId) {
+            // Prevent infinite loading if deckId is missing
+            const timer = setTimeout(() => setIsLoading(false), 2000);
+            return () => clearTimeout(timer);
+        }
+
         async function fetchData() {
             try {
                 // Fetch cards
-                const data = await flashcardServices.getFlashcards(deckId);
+                const data = await flashcardServices.getFlashcards(deckId!);
                 setAllCards(data);
                 setDeck(data);
                 setStats({
@@ -49,10 +58,12 @@ export default function FlashcardStudyPage({ searchParams }: { searchParams: Pro
                 });
 
                 // Fetch deck title
-                const decks = await flashcardServices.getUserDecks(user!.$id);
-                const currentDeck = decks.find(d => d.$id === deckId);
-                if (currentDeck) {
-                    setDeckTitle(currentDeck.title);
+                if (user) {
+                    const decks = await flashcardServices.getUserDecks(user.$id);
+                    const currentDeck = decks.find(d => d.$id === deckId);
+                    if (currentDeck) {
+                        setDeckTitle(currentDeck.title);
+                    }
                 }
 
                 // Check for saved session
@@ -66,12 +77,12 @@ export default function FlashcardStudyPage({ searchParams }: { searchParams: Pro
                 setIsLoading(false);
             }
         }
-        if (user && deckId) fetchData();
+        if (deckId) fetchData();
     }, [deckId, user]);
 
     // Save progress
     useEffect(() => {
-        if (user && currentIndex > 0) {
+        if (user && currentIndex > 0 && deckId) {
             localStorage.setItem(`fc_pos_${deckId}`, currentIndex.toString());
         }
     }, [currentIndex, deckId, user]);
@@ -129,7 +140,7 @@ export default function FlashcardStudyPage({ searchParams }: { searchParams: Pro
     };
 
     const resetSession = () => {
-        localStorage.removeItem(`fc_pos_${deckId}`);
+        if (deckId) localStorage.removeItem(`fc_pos_${deckId}`);
         setCurrentIndex(0);
         setShowResumeModal(false);
     };
@@ -143,12 +154,16 @@ export default function FlashcardStudyPage({ searchParams }: { searchParams: Pro
         );
     }
 
-    if (deck.length === 0) {
+    if (!deckId || deck.length === 0) {
         return (
             <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
                 <XCircle size={64} className="text-slate-300 dark:text-slate-800 mb-6" />
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">No Cards Found</h3>
-                <p className="text-slate-500 font-medium mt-2">Add cards to this deck before starting a study session.</p>
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">
+                    {!deckId ? 'Invalid Access' : 'No Cards Found'}
+                </h3>
+                <p className="text-slate-500 font-medium mt-2">
+                    {!deckId ? 'No deck identifier was provided.' : 'Add cards to this deck before starting a study session.'}
+                </p>
                 <button
                     onClick={() => router.back()}
                     className="mt-8 px-8 py-3 bg-blue-600 text-white rounded-xl font-bold uppercase text-[10px] tracking-widest"
@@ -401,5 +416,18 @@ export default function FlashcardStudyPage({ searchParams }: { searchParams: Pro
                 }
             `}</style>
         </div>
+    );
+}
+
+export default function FlashcardStudyPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
+                <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p className="text-slate-500 font-black uppercase tracking-widest text-[10px]">Loading Session Reader...</p>
+            </div>
+        }>
+            <FlashcardStudyContent />
+        </Suspense>
     );
 }
