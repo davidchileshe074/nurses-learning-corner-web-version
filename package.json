@@ -5,10 +5,22 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "static-build": "next build",
+    "cap-sync": "npx cap sync",
+    "ios": "npx cap open ios",
+    "android": "npx cap open android",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
+    "@capacitor/android": "^8.1.0",
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/cli": "^8.1.0",
+    "@capacitor/core": "^8.1.0",
+    "@capacitor/ios": "^8.1.0",
+    "@capacitor/keyboard": "^8.0.0",
+    "@capacitor/splash-screen": "^8.0.0",
+    "@capacitor/status-bar": "^8.0.0",
     "@ducanh2912/next-pwa": "^10.2.9",
     "appwrite": "^22.0.0",
     "dexie": "^4.3.0",

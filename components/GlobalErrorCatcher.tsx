@@ -10,6 +10,22 @@ import { useEffect } from "react";
  */
 export function GlobalErrorCatcher() {
     useEffect(() => {
+        // 1. Monkey-patch console.error to silence the "Realtime got disconnected" log
+        // This log comes directly from Appwrite SDK's internal client and can't be caught by event listeners.
+        const originalConsoleError = console.error;
+        console.error = (...args) => {
+            const message = args[0] ? String(args[0]) : "";
+            if (
+                message.includes("Realtime got disconnected") ||
+                message.includes("Reconnect will be attempted") ||
+                (args[0] && typeof args[0] === 'object' && Object.keys(args[0]).length === 0) // Suppress the empty {} errors also shown by user
+            ) {
+                // Silently drop these expected SDK-level logs
+                return;
+            }
+            originalConsoleError.apply(console, args);
+        };
+
         const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
             // Prevent the browser from showing the default error
             event.preventDefault();
@@ -59,6 +75,8 @@ export function GlobalErrorCatcher() {
         window.addEventListener("error", handleError);
 
         return () => {
+            // Restore original console.error
+            console.error = originalConsoleError;
             window.removeEventListener(
                 "unhandledrejection",
                 handleUnhandledRejection

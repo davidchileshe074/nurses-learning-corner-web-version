@@ -19,8 +19,8 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-export default function FlashcardListPage({ params }: { params: Promise<{ deckId: string }> }) {
-    const { deckId } = use(params);
+export default function FlashcardListPage({ searchParams }: { searchParams: Promise<{ deckId: string }> }) {
+    const { deckId } = use(searchParams);
     const { user } = useAuthStore();
     const router = useRouter();
     const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
@@ -41,9 +41,6 @@ export default function FlashcardListPage({ params }: { params: Promise<{ deckId
     }, [user, deckId]);
 
     const fetchDeckInfo = async () => {
-        // Since we don't have a getDeckById service yet, we'll find it from the list or just use a default
-        // In a real app, you'd have a specific service for this. 
-        // For now, we'll try to get it from the user's decks.
         try {
             const decks = await flashcardServices.getUserDecks(user!.$id);
             const currentDeck = decks.find(d => d.$id === deckId);
@@ -147,7 +144,7 @@ export default function FlashcardListPage({ params }: { params: Promise<{ deckId
                             </div>
                         </div>
                         <Link
-                            href={`/flashcards/${deckId}/study`}
+                            href={`/flashcards/study_session?deckId=${deckId}`}
                             className="px-10 py-4 bg-white text-blue-600 rounded-2xl font-black uppercase text-xs tracking-widest hover:scale-105 active:scale-95 transition-transform shadow-xl whitespace-nowrap"
                         >
                             Begin Session

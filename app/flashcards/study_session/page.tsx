@@ -20,8 +20,8 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-export default function FlashcardStudyPage({ params }: { params: Promise<{ deckId: string }> }) {
-    const { deckId } = use(params);
+export default function FlashcardStudyPage({ searchParams }: { searchParams: Promise<{ deckId: string }> }) {
+    const { deckId } = use(searchParams);
     const { user } = useAuthStore();
     const router = useRouter();
 
@@ -36,6 +36,7 @@ export default function FlashcardStudyPage({ params }: { params: Promise<{ deckI
     const [deckTitle, setDeckTitle] = useState('Study Session');
 
     useEffect(() => {
+        if (!deckId) return;
         async function fetchData() {
             try {
                 // Fetch cards
@@ -113,7 +114,7 @@ export default function FlashcardStudyPage({ params }: { params: Promise<{ deckI
                 setCurrentIndex(prev => prev + 1);
             } else {
                 // Completed session
-                router.push(`/flashcards/${deckId}`);
+                router.push(`/flashcards/deck?deckId=${deckId}`);
             }
         }, 150);
     };

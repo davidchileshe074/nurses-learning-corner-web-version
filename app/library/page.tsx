@@ -182,7 +182,7 @@ export default function LibraryPage() {
             router.push('/profile');
             return;
         }
-        router.push(`/library/${item.$id}`);
+        router.push(`/library/details?id=${item.$id}`);
     };
 
     const handleDownload = async (item: Content) => {

@@ -76,7 +76,7 @@ export default function RecentStudyPage() {
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, scale: 0.9 }}
                                             transition={{ delay: index * 0.05 }}
-                                            onClick={() => router.push(`/library/${item.$id}`)}
+                                            onClick={() => router.push(`/library/details?id=${item.$id}`)}
                                             className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-[#2B669A]/30 transition-all cursor-pointer group"
                                         >
                                             <div className="flex items-start gap-4 mb-4">

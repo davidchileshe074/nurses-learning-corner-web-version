@@ -25,8 +25,8 @@ import { useRouter } from 'next/navigation';
 import { activityServices } from '@/services/activity';
 import { addToRecent } from '@/services/recentStudy';
 
-export default function ContentDetailsPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = use(params);
+export default function ContentDetailsPage({ searchParams }: { searchParams: Promise<{ id: string }> }) {
+    const { id } = use(searchParams);
     const { user } = useAuthStore();
     const router = useRouter();
 
@@ -43,6 +43,7 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ id: s
     const [savedPage, setSavedPage] = useState(1);
 
     useEffect(() => {
+        if (!id) return;
         const loadPageData = async () => {
             setIsLoading(true);
             try {
@@ -389,7 +390,12 @@ export default function ContentDetailsPage({ params }: { params: Promise<{ id: s
                             userId={user!.$id}
                             contentId={content.$id}
                             initialPage={initialPage}
-                            onClose={() => setIsViewing(false)}
+                            onClose={() => {
+                                if (viewerUrl.startsWith('blob:')) {
+                                    URL.revokeObjectURL(viewerUrl);
+                                }
+                                setIsViewing(false);
+                            }}
                         />
                     </motion.div>
                 )}

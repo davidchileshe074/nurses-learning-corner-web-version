@@ -32,6 +32,7 @@ export const viewport: Viewport = {
 
 import { Navigation } from "@/components/Navigation";
 import { GlobalErrorCatcher } from "@/components/GlobalErrorCatcher";
+import { CapacitorProvider } from "@/components/CapacitorProvider";
 
 export default function RootLayout({
   children,
@@ -49,14 +50,16 @@ export default function RootLayout({
         suppressHydrationWarning={true}
       >
         <GlobalErrorCatcher />
-        <AuthGuard>
-          <div className="flex min-h-screen">
-            <Navigation />
-            <main className="flex-1 overflow-x-hidden md:pb-0 pb-24">
-              {children}
-            </main>
-          </div>
-        </AuthGuard>
+        <CapacitorProvider>
+          <AuthGuard>
+            <div className="flex min-h-screen">
+              <Navigation />
+              <main className="flex-1 overflow-x-hidden md:pb-0 pb-24">
+                {children}
+              </main>
+            </div>
+          </AuthGuard>
+        </CapacitorProvider>
       </body>
     </html>
   );
