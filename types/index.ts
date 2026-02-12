@@ -83,7 +83,7 @@ export interface AppNotification {
     userId: string;
     title: string;
     message: string;
-    type: 'system' | 'subscription' | 'content';
+    type: 'info' | 'warning' | 'success';
     read: boolean | null;
     $createdAt: string;
 }

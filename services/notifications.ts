@@ -75,7 +75,7 @@ export const notificationServices = {
                 await this.addNotification(userId, {
                     title: 'Clinical Access Warning',
                     message: `Your premium repository access expires in ${diffDays} days. Please re-validate your credentials.`,
-                    type: 'SUBSCRIPTION'
+                    type: 'warning'
                 });
                 localStorage.setItem(LAST_EXPIRY_CHECK_KEY, today);
             }
@@ -108,7 +108,7 @@ export const notificationServices = {
                         await this.addNotification(userId, {
                             title: 'Laboratory Update',
                             message: `Integrated ${newCount} new diagnostic ${newCount === 1 ? 'asset' : 'assets'} into your curriculum.`,
-                            type: 'CONTENT'
+                            type: 'info'
                         });
                     }
                     localStorage.setItem(LAST_CONTENT_ID_KEY, mostRecent.$id);

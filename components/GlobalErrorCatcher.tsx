@@ -14,11 +14,31 @@ export function GlobalErrorCatcher() {
         // This log comes directly from Appwrite SDK's internal client and can't be caught by event listeners.
         const originalConsoleError = console.error;
         console.error = (...args) => {
-            const message = args[0] ? String(args[0]) : "";
+            let message = "";
+            try {
+                if (args[0] !== null && args[0] !== undefined) {
+                    // Safe string conversion even for objects with no prototype
+                    if (typeof args[0] === 'string') {
+                        message = args[0];
+                    } else if (typeof args[0] === 'symbol') {
+                        message = args[0].toString();
+                    } else {
+                        // For objects, try to satisfy string requirement for .includes()
+                        message = JSON.stringify(args[0]);
+                    }
+                }
+            } catch (e) {
+                // Final fallback if stringify or toString fails
+                message = "error_payload";
+            }
+
             if (
                 message.includes("Realtime got disconnected") ||
                 message.includes("Reconnect will be attempted") ||
-                (args[0] && typeof args[0] === 'object' && Object.keys(args[0]).length === 0) // Suppress the empty {} errors also shown by user
+                message.includes("WebSocket is already in CLOSING") ||
+                message.includes("closed before a close frame") ||
+                message === "{}" ||
+                (args[0] && typeof args[0] === 'object' && Object.keys(args[0]).length === 0)
             ) {
                 // Silently drop these expected SDK-level logs
                 return;
