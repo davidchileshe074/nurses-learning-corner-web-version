@@ -32,11 +32,11 @@ class PDRErrorBoundary extends Component<{ children: ReactNode; fallback: (error
     }
 }
 
-// Set worker for react-pdf using a guaranteed versioned CDN for maximum mobile compatibility
+// Set worker for react-pdf using local file confirmed in public directory.
+// This matches the react-pdf v10 version and prevents CORS issues on mobile.
 const getWorkerSrc = () => {
     if (typeof window === 'undefined') return null;
-    // Forcing 4.8.64 which is the compatible version for react-pdf 10.x
-    return `https://unpkg.com/pdfjs-dist@4.8.64/build/pdf.worker.min.js`;
+    return '/pdf.worker.min.mjs'; // Use the .mjs version for modern browsers/iOS
 };
 
 interface PDFViewerProps {
@@ -47,44 +47,75 @@ interface PDFViewerProps {
     onClose: () => void;
 }
 
+interface PDFViewerContentProps extends PDFViewerProps {
+    useSimpleMode: boolean;
+    setUseSimpleMode: (value: boolean) => void;
+}
+
 export function PDFViewer(props: PDFViewerProps) {
+    const [useSimpleMode, setUseSimpleMode] = useState(false);
+
     return (
-        <PDRErrorBoundary fallback={(error) => (
-            <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
-                <div className="w-20 h-20 bg-red-900/20 rounded-full flex items-center justify-center mb-6">
-                    <svg className="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                    </svg>
+        <PDRErrorBoundary
+            key={useSimpleMode ? 'simple' : 'standard'}
+            fallback={(error) => (
+                <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
+                    <div className="w-20 h-20 bg-red-900/20 rounded-full flex items-center justify-center mb-6">
+                        <svg className="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg>
+                    </div>
+                    <h3 className="text-white font-bold text-lg mb-2">Viewer Error</h3>
+                    <p className="text-slate-400 text-sm max-w-xs mx-auto mb-2">
+                        The document viewer encountered an unexpected issue on your device.
+                    </p>
+                    <p className="text-red-500/50 text-[10px] font-mono mb-6 max-w-xs break-words">
+                        Error Detail: {error}
+                    </p>
+                    <div className="flex flex-col gap-3 w-full max-w-xs mx-auto">
+                        <button
+                            onClick={() => {
+                                setUseSimpleMode(true);
+                            }}
+                            className="w-full px-6 py-3 bg-purple-600 text-white rounded-xl font-bold text-xs uppercase tracking-wide hover:bg-purple-500 transition-all shadow-lg shadow-purple-600/20"
+                        >
+                            Use Simple Mode (iOS Safe)
+                        </button>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => window.location.reload()}
+                                className="flex-1 px-4 py-3 bg-[#2B669A]/20 text-blue-400 border border-blue-500/30 rounded-xl font-bold text-[10px] uppercase tracking-wide hover:bg-[#2B669A]/30 transition-all"
+                            >
+                                Reload App
+                            </button>
+                            <button
+                                onClick={props.onClose}
+                                className="flex-1 px-4 py-3 bg-slate-800 text-white rounded-xl font-bold text-[10px] uppercase tracking-wide hover:bg-slate-700 transition-all"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <h3 className="text-white font-bold text-lg mb-2">Viewer Error</h3>
-                <p className="text-slate-400 text-sm max-w-xs mx-auto mb-2">
-                    The document viewer encountered an unexpected issue on your device.
-                </p>
-                <p className="text-red-500/50 text-[10px] font-mono mb-6 max-w-xs break-words">
-                    Error Detail: {error}
-                </p>
-                <div className="flex gap-3">
-                    <button
-                        onClick={() => window.location.reload()}
-                        className="px-6 py-3 bg-[#2B669A] text-white rounded-xl font-bold text-xs uppercase tracking-wide hover:bg-[#234f7a] transition-all"
-                    >
-                        Reload App
-                    </button>
-                    <button
-                        onClick={props.onClose}
-                        className="px-6 py-3 bg-slate-800 text-white rounded-xl font-bold text-xs uppercase tracking-wide hover:bg-slate-700 transition-all"
-                    >
-                        Close
-                    </button>
-                </div>
-            </div>
-        )}>
-            <PDFViewerContent {...props} />
+            )}>
+            <PDFViewerContent
+                {...props}
+                useSimpleMode={useSimpleMode}
+                setUseSimpleMode={setUseSimpleMode}
+            />
         </PDRErrorBoundary>
     );
 }
 
-function PDFViewerContent({ url, userId, contentId, initialPage = 1, onClose }: PDFViewerProps) {
+function PDFViewerContent({
+    url,
+    userId,
+    contentId,
+    initialPage = 1,
+    onClose,
+    useSimpleMode,
+    setUseSimpleMode
+}: PDFViewerContentProps) {
     const [numPages, setNumPages] = useState<number>(0);
     const [pageNumber, setPageNumber] = useState(initialPage);
     const [scale, setScale] = useState(1.0);
@@ -109,7 +140,7 @@ function PDFViewerContent({ url, userId, contentId, initialPage = 1, onClose }: 
         if (src) pdfjs.GlobalWorkerOptions.workerSrc = src;
     }
 
-    // Handle Blob conversion and Delayed Mont
+    // Handle Blob conversion and Delayed Mount
     useEffect(() => {
         let isMounted = true;
         let objectUrl: string | null = null;
@@ -117,7 +148,7 @@ function PDFViewerContent({ url, userId, contentId, initialPage = 1, onClose }: 
         const init = async () => {
             // Updated retry logic for worker source
             if (loadAttempts > 0) {
-                pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.8.64/pdf.worker.min.js`;
+                pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.8.64/pdf.worker.min.mjs`;
             }
 
             if (!url) return;
@@ -129,7 +160,7 @@ function PDFViewerContent({ url, userId, contentId, initialPage = 1, onClose }: 
                 } else {
                     if (isMounted) setResolvedUrl(url as string);
                 }
-                
+
                 // Add a small delay on mobile to allow the browser to stabilize memory
                 const delay = isIOS ? 800 : 300;
                 setTimeout(() => {
@@ -142,7 +173,21 @@ function PDFViewerContent({ url, userId, contentId, initialPage = 1, onClose }: 
             }
         };
 
-        init();
+        if (!useSimpleMode) {
+            init();
+        } else {
+            // If in simple mode, we just need the URL resolved
+            const resolveOnly = async () => {
+                if (url instanceof Blob) {
+                    objectUrl = URL.createObjectURL(url);
+                    if (isMounted) setResolvedUrl(objectUrl);
+                } else {
+                    if (isMounted) setResolvedUrl(url as string);
+                }
+                if (isMounted) setReadyToRender(true);
+            };
+            resolveOnly();
+        }
 
         return () => {
             isMounted = false;
@@ -150,7 +195,7 @@ function PDFViewerContent({ url, userId, contentId, initialPage = 1, onClose }: 
                 URL.revokeObjectURL(objectUrl);
             }
         };
-    }, [url, loadAttempts, isIOS]);
+    }, [url, loadAttempts, isIOS, useSimpleMode]);
 
     // Simplified Mobile Detection that responds to window availability
     const [isSmallScreen, setIsSmallScreen] = useState(false);
@@ -188,7 +233,7 @@ function PDFViewerContent({ url, userId, contentId, initialPage = 1, onClose }: 
         // If it failed and we haven't retried with CDN worker yet, try that
         if (loadAttempts === 0 && (error.message.includes('Worker') || error.message.includes('setting up'))) {
             console.warn('Local worker failed, retrying with CDN worker...');
-            pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+            pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.8.64/pdf.worker.min.mjs`;
             setLoadAttempts(1);
             return;
         }
@@ -307,6 +352,20 @@ function PDFViewerContent({ url, userId, contentId, initialPage = 1, onClose }: 
                     </div>
 
                     <button
+                        onClick={() => setUseSimpleMode(!useSimpleMode)}
+                        className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl border-2 transition-all ${useSimpleMode
+                            ? 'bg-amber-600 border-amber-500 text-white shadow-lg shadow-amber-600/20'
+                            : 'border-slate-800 text-slate-400 hover:border-amber-500 hover:text-amber-400'
+                            }`}
+                        title={useSimpleMode ? "Back to Advanced Viewer" : "Switch to iOS Safe Mode"}
+                    >
+                        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                        <span className="text-[10px] font-black uppercase tracking-widest hidden lg:block">{useSimpleMode ? 'Standard Mode' : 'Safe Mode'}</span>
+                    </button>
+
+                    <button
                         onClick={() => setShowNotes(!showNotes)}
                         className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl border-2 transition-all ${showNotes
                             ? 'bg-purple-600 border-purple-500 text-white shadow-lg shadow-purple-600/20'
@@ -356,6 +415,14 @@ function PDFViewerContent({ url, userId, contentId, initialPage = 1, onClose }: 
                         <div className="flex-1 flex flex-col items-center justify-center min-h-[50vh] gap-4 text-center px-6">
                             <div className="w-12 h-12 border-4 border-[#2B669A] border-t-transparent rounded-full animate-spin"></div>
                             <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Initializing Reader Engine...</p>
+                        </div>
+                    ) : useSimpleMode ? (
+                        <div className="flex-1 w-full bg-slate-900 overflow-hidden">
+                            <iframe
+                                src={`${resolvedUrl}#toolbar=0&navpanes=0`}
+                                className="w-full h-full border-none"
+                                title="Safe PDF Viewer"
+                            />
                         </div>
                     ) : (
                         <Document
