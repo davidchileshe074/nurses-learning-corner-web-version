@@ -8,8 +8,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { noteServices } from '@/services/notes';
 import { NoteEditor } from './NoteEditor';
 
-// Set worker for react-pdf using CDN for stability
-pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+// Set worker for react-pdf using local file for stability
+pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
 interface PDFViewerProps {
     url: string | Blob;
@@ -126,23 +126,21 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
         return () => window.removeEventListener('keydown', handleKeyPress);
     }, [pageNumber, numPages, onClose]);
 
-    const version = pdfjs.version;
-
-    // Set worker source
+    // Set worker source to local public file for maximum reliability and no CORS issues
     useEffect(() => {
-        pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/pdf.worker.min.mjs`;
-    }, [version]);
+        pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+    }, []);
 
     const options = useMemo(() => ({
-        cMapUrl: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/cmaps/`,
+        cMapUrl: '/cmaps/',
         cMapPacked: true,
-        standardFontDataUrl: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/standard_fonts/`,
+        standardFontDataUrl: '/standard_fonts/',
         enableXfa: false,
         isEvalSupported: false,
         // iOS Fixes: Disable range requests and streaming to prevent hangs on some Safari versions
         disableRange: true,
         disableStream: true,
-    }), [version]);
+    }), []);
 
     return (
         <div
