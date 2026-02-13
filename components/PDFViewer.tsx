@@ -54,7 +54,7 @@ interface PDFViewerContentProps extends PDFViewerProps {
     numPages: number;
     setNumPages: (n: number) => void;
     pageNumber: number;
-    setPageNumber: React.Dispatch<React.SetStateAction<number>>;
+    setPageNumber: (val: number | ((prev: number) => number)) => void;
     loadError: string | null;
     setLoadError: (err: string | null) => void;
 }
@@ -210,19 +210,32 @@ function PDFViewerContent({
         }
     }, [resolvedUrl, loadAttempts, isIOS, useSimpleMode]);
 
-    // Manual metadata fetch for Simple Mode (if numPages hasn't been set yet)
+    // Robust metadata fetch for Simple Mode
+    // This is required because if numPages is 0, the 'Next' buttons stay disabled
     useEffect(() => {
         if (useSimpleMode && resolvedUrl && numPages === 0) {
+            let isMounted = true;
             const getMeta = async () => {
                 try {
-                    const loadingTask = pdfjs.getDocument(resolvedUrl);
+                    // Use a clean loading task to avoid worker initialization issues
+                    const loadingTask = pdfjs.getDocument({
+                        url: resolvedUrl,
+                        // Avoid using worker for a simple metadata fetch if possible to prevent crashes
+                        stopAtErrors: false
+                    });
                     const pdf = await loadingTask.promise;
-                    if (numPages === 0) setNumPages(pdf.numPages);
+                    if (isMounted && pdf.numPages > 0) {
+                        setNumPages(pdf.numPages);
+                    }
                 } catch (e) {
-                    console.warn('Metadata fetch failed for Simple Mode:', e);
+                    console.warn('Silent metadata fetch failed:', e);
+                    // Last resort: If we can't get the page count, we'll set a high number
+                    // so the user can at least keep clicking 'Next' in simple mode
+                    if (isMounted && numPages === 0) setNumPages(999);
                 }
             };
             getMeta();
+            return () => { isMounted = false; };
         }
     }, [useSimpleMode, resolvedUrl, numPages, setNumPages]);
 
@@ -371,7 +384,7 @@ function PDFViewerContent({
                         </button>
                     </div>
 
-                    <div className="hidden md:flex items-center bg-slate-800 rounded-xl overflow-hidden">
+                    <div className="flex items-center bg-slate-800 rounded-xl overflow-hidden">
                         <button onClick={() => setScale(Math.max(0.5, scale - 0.2))} className="p-2 text-slate-400 hover:bg-slate-700 transition-colors border-r border-slate-700">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg>
                         </button>
@@ -413,7 +426,7 @@ function PDFViewerContent({
             {/* Main Layout (Split) */}
             <div className="flex-1 flex overflow-hidden relative">
                 {/* PDF Area */}
-                <div className={`flex-1 overflow-auto bg-slate-950 p-0 sm:p-8 flex flex-col items-center custom-scrollbar transition-all duration-500 ${showNotes ? 'lg:mr-96 xl:mr-[500px]' : ''}`}>
+                <div className={`flex-1 overflow-auto bg-slate-950 p-0 sm:p-8 flex flex-col items-center justify-start custom-scrollbar transition-all duration-500 ${showNotes ? 'lg:mr-96 xl:mr-[500px]' : ''}`}>
                     {loadError ? (
                         <div className="flex-1 flex flex-col items-center justify-center min-h-[50vh] gap-4 text-center px-6">
                             <div className="w-20 h-20 bg-red-900/20 rounded-full flex items-center justify-center">
@@ -447,19 +460,38 @@ function PDFViewerContent({
                             <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Initializing Reader Engine...</p>
                         </div>
                     ) : (useSimpleMode && resolvedUrl) ? (
-                        <div className="flex-1 w-full bg-slate-900 relative overflow-hidden flex flex-col items-center">
-                            {/* Safari/iOS Fix: Using key={pageNumber} forces iframe to reload and jump to correct page */}
-                            <iframe
-                                key={`${resolvedUrl}-${pageNumber}`}
-                                src={`${resolvedUrl}#page=${pageNumber}&view=FitH`}
-                                className="w-full h-full border-none absolute inset-0"
-                                title="Safe PDF Viewer"
+                        <div className="flex-1 w-full bg-slate-950 flex flex-col items-center justify-start relative overflow-hidden">
+                            <div
+                                className="w-full h-full bg-slate-900 relative shadow-2xl flex flex-col items-center"
                                 style={{
-                                    display: 'block',
                                     height: '100%',
-                                    width: '100%'
+                                    minHeight: '100%',
+                                    maxWidth: isMobileUI ? '100%' : '800px',
+                                    transform: `scale(${isMobileUI ? scale * 1.1 : scale})`,
+                                    transformOrigin: 'top center',
+                                    transition: 'transform 0.2s ease-out'
                                 }}
-                            />
+                            >
+                                {/* Safari/iOS Fixes: width-1/min-100 prevents Safari from expanding the iframe to full PDF height */}
+                                <iframe
+                                    key={`${resolvedUrl}-${pageNumber}`}
+                                    // #view=FitH forces the PDF to fit the width of the container
+                                    src={`${resolvedUrl}#page=${pageNumber}&view=FitH,0&scrollbar=0&toolbar=0`}
+                                    className="w-full h-full border-none"
+                                    title="Safe PDF Viewer"
+                                    style={{
+                                        display: 'block',
+                                        height: '100%',
+                                        width: '1px',
+                                        minWidth: '100%',
+                                        border: 'none',
+                                        WebkitOverflowScrolling: 'touch'
+                                    }}
+                                    // @ts-ignore
+                                    scrolling="no"
+                                    loading="lazy"
+                                />
+                            </div>
                         </div>
                     ) : (
                         <Document
