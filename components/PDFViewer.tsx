@@ -10,14 +10,14 @@ import { noteServices } from '@/services/notes';
 import { NoteEditor } from './NoteEditor';
 
 // Define Error Boundary Component
-class PDRErrorBoundary extends Component<{ children: ReactNode; fallback: ReactNode }, { hasError: boolean }> {
+class PDRErrorBoundary extends Component<{ children: ReactNode; fallback: (error: string) => ReactNode }, { hasError: boolean, errorMsg: string }> {
     constructor(props: any) {
         super(props);
-        this.state = { hasError: false };
+        this.state = { hasError: false, errorMsg: '' };
     }
 
-    static getDerivedStateFromError(_: Error) {
-        return { hasError: true };
+    static getDerivedStateFromError(error: Error) {
+        return { hasError: true, errorMsg: error.message };
     }
 
     componentDidCatch(error: Error, errorInfo: ErrorInfo) {
@@ -26,16 +26,17 @@ class PDRErrorBoundary extends Component<{ children: ReactNode; fallback: ReactN
 
     render() {
         if (this.state.hasError) {
-            return this.props.fallback;
+            return this.props.fallback(this.state.errorMsg);
         }
         return this.props.children;
     }
 }
 
-// Set worker for react-pdf using local file confirmed in public directory
+// Set worker for react-pdf using a guaranteed versioned CDN for maximum mobile compatibility
 const getWorkerSrc = () => {
     if (typeof window === 'undefined') return null;
-    return '/pdf.worker.min.js';
+    // Forcing 4.8.64 which is the compatible version for react-pdf 10.x
+    return `https://unpkg.com/pdfjs-dist@4.8.64/build/pdf.worker.min.js`;
 };
 
 interface PDFViewerProps {
@@ -48,7 +49,7 @@ interface PDFViewerProps {
 
 export function PDFViewer(props: PDFViewerProps) {
     return (
-        <PDRErrorBoundary fallback={
+        <PDRErrorBoundary fallback={(error) => (
             <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
                 <div className="w-20 h-20 bg-red-900/20 rounded-full flex items-center justify-center mb-6">
                     <svg className="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -56,8 +57,11 @@ export function PDFViewer(props: PDFViewerProps) {
                     </svg>
                 </div>
                 <h3 className="text-white font-bold text-lg mb-2">Viewer Error</h3>
-                <p className="text-slate-400 text-sm max-w-xs mx-auto mb-6">
+                <p className="text-slate-400 text-sm max-w-xs mx-auto mb-2">
                     The document viewer encountered an unexpected issue on your device.
+                </p>
+                <p className="text-red-500/50 text-[10px] font-mono mb-6 max-w-xs break-words">
+                    Error Detail: {error}
                 </p>
                 <div className="flex gap-3">
                     <button
@@ -74,7 +78,7 @@ export function PDFViewer(props: PDFViewerProps) {
                     </button>
                 </div>
             </div>
-        }>
+        )}>
             <PDFViewerContent {...props} />
         </PDRErrorBoundary>
     );
@@ -97,20 +101,23 @@ function PDFViewerContent({ url, userId, contentId, initialPage = 1, onClose }: 
             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     }, []);
 
-    // Handle Blob conversion and Worker Initialization
+    const [readyToRender, setReadyToRender] = useState(false);
+
+    // Synchronous worker assignment for immediate availability
+    if (typeof window !== 'undefined' && !pdfjs.GlobalWorkerOptions.workerSrc) {
+        const src = getWorkerSrc();
+        if (src) pdfjs.GlobalWorkerOptions.workerSrc = src;
+    }
+
+    // Handle Blob conversion and Delayed Mont
     useEffect(() => {
         let isMounted = true;
         let objectUrl: string | null = null;
 
         const init = async () => {
-            // Set worker source logic - only assign if it hasn't been assigned or needs retry
-            const currentWorker = pdfjs.GlobalWorkerOptions.workerSrc;
-            const targetWorker = loadAttempts === 0
-                ? getWorkerSrc()
-                : `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
-
-            if (targetWorker && currentWorker !== targetWorker) {
-                pdfjs.GlobalWorkerOptions.workerSrc = targetWorker;
+            // Updated retry logic for worker source
+            if (loadAttempts > 0) {
+                pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.8.64/pdf.worker.min.js`;
             }
 
             if (!url) return;
@@ -122,6 +129,13 @@ function PDFViewerContent({ url, userId, contentId, initialPage = 1, onClose }: 
                 } else {
                     if (isMounted) setResolvedUrl(url as string);
                 }
+                
+                // Add a small delay on mobile to allow the browser to stabilize memory
+                const delay = isIOS ? 800 : 300;
+                setTimeout(() => {
+                    if (isMounted) setReadyToRender(true);
+                }, delay);
+
             } catch (err) {
                 console.error("URL resolution error:", err);
                 if (isMounted) setLoadError("Failed to initialize document source.");
@@ -136,7 +150,7 @@ function PDFViewerContent({ url, userId, contentId, initialPage = 1, onClose }: 
                 URL.revokeObjectURL(objectUrl);
             }
         };
-    }, [url, loadAttempts]);
+    }, [url, loadAttempts, isIOS]);
 
     // Simplified Mobile Detection that responds to window availability
     const [isSmallScreen, setIsSmallScreen] = useState(false);
@@ -338,7 +352,7 @@ function PDFViewerContent({ url, userId, contentId, initialPage = 1, onClose }: 
                                 </button>
                             </div>
                         </div>
-                    ) : !resolvedUrl ? (
+                    ) : (!resolvedUrl || !readyToRender) ? (
                         <div className="flex-1 flex flex-col items-center justify-center min-h-[50vh] gap-4 text-center px-6">
                             <div className="w-12 h-12 border-4 border-[#2B669A] border-t-transparent rounded-full animate-spin"></div>
                             <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Initializing Reader Engine...</p>
