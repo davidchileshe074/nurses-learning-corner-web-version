@@ -50,10 +50,49 @@ interface PDFViewerProps {
 interface PDFViewerContentProps extends PDFViewerProps {
     useSimpleMode: boolean;
     setUseSimpleMode: (value: boolean) => void;
+    resolvedUrl: string | null;
+    numPages: number;
+    setNumPages: (n: number) => void;
+    pageNumber: number;
+    setPageNumber: React.Dispatch<React.SetStateAction<number>>;
+    loadError: string | null;
+    setLoadError: (err: string | null) => void;
 }
 
 export function PDFViewer(props: PDFViewerProps) {
     const [useSimpleMode, setUseSimpleMode] = useState(false);
+    const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
+    const [numPages, setNumPages] = useState<number>(0);
+    const [pageNumber, setPageNumber] = useState(props.initialPage || 1);
+    const [loadError, setLoadError] = useState<string | null>(null);
+
+    // Resolve URL exactly once per 'url' prop change
+    useEffect(() => {
+        let isMounted = true;
+        let objectUrl: string | null = null;
+
+        const resolve = async () => {
+            if (!props.url) return;
+            try {
+                if (props.url instanceof Blob) {
+                    objectUrl = URL.createObjectURL(props.url);
+                    if (isMounted) setResolvedUrl(objectUrl);
+                } else {
+                    if (isMounted) setResolvedUrl(props.url as string);
+                }
+            } catch (err) {
+                console.error("URL resolution error:", err);
+                if (isMounted) setLoadError("Failed to initialize document source.");
+            }
+        };
+
+        resolve();
+
+        return () => {
+            isMounted = false;
+            if (objectUrl) URL.revokeObjectURL(objectUrl);
+        };
+    }, [props.url]);
 
     return (
         <PDRErrorBoundary
@@ -102,6 +141,13 @@ export function PDFViewer(props: PDFViewerProps) {
                 {...props}
                 useSimpleMode={useSimpleMode}
                 setUseSimpleMode={setUseSimpleMode}
+                resolvedUrl={resolvedUrl}
+                numPages={numPages}
+                setNumPages={setNumPages}
+                pageNumber={pageNumber}
+                setPageNumber={setPageNumber}
+                loadError={loadError}
+                setLoadError={setLoadError}
             />
         </PDRErrorBoundary>
     );
@@ -114,16 +160,19 @@ function PDFViewerContent({
     initialPage = 1,
     onClose,
     useSimpleMode,
-    setUseSimpleMode
+    setUseSimpleMode,
+    resolvedUrl,
+    numPages,
+    setNumPages,
+    pageNumber,
+    setPageNumber,
+    loadError,
+    setLoadError
 }: PDFViewerContentProps) {
-    const [numPages, setNumPages] = useState<number>(0);
-    const [pageNumber, setPageNumber] = useState(initialPage);
     const [scale, setScale] = useState(1.0);
     const [isLoading, setIsLoading] = useState(true);
     const [showNotes, setShowNotes] = useState(false);
-    const [loadError, setLoadError] = useState<string | null>(null);
     const [loadAttempts, setLoadAttempts] = useState(0);
-    const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
 
     // iOS Detection
     const isIOS = useMemo(() => {
@@ -140,66 +189,47 @@ function PDFViewerContent({
         if (src) pdfjs.GlobalWorkerOptions.workerSrc = src;
     }
 
-    // Handle Blob conversion and Delayed Mount
+    // Handle Readiness & Worker assignment
     useEffect(() => {
         let isMounted = true;
-        let objectUrl: string | null = null;
 
-        const init = async () => {
-            // Updated retry logic for worker source
-            if (loadAttempts > 0) {
-                pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.8.64/pdf.worker.min.mjs`;
-            }
-
-            if (!url) return;
-
-            try {
-                if (url instanceof Blob) {
-                    objectUrl = URL.createObjectURL(url);
-                    if (isMounted) setResolvedUrl(objectUrl);
-                } else {
-                    if (isMounted) setResolvedUrl(url as string);
-                }
-
-                // Add a small delay on mobile to allow the browser to stabilize memory
-                const delay = isIOS ? 800 : 300;
-                setTimeout(() => {
-                    if (isMounted) setReadyToRender(true);
-                }, delay);
-
-            } catch (err) {
-                console.error("URL resolution error:", err);
-                if (isMounted) setLoadError("Failed to initialize document source.");
-            }
-        };
-
-        if (!useSimpleMode) {
-            init();
-        } else {
-            // If in simple mode, we just need the URL resolved
-            const resolveOnly = async () => {
-                if (url instanceof Blob) {
-                    objectUrl = URL.createObjectURL(url);
-                    if (isMounted) setResolvedUrl(objectUrl);
-                } else {
-                    if (isMounted) setResolvedUrl(url as string);
-                }
-                if (isMounted) setReadyToRender(true);
-            };
-            resolveOnly();
+        if (loadAttempts > 0) {
+            pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.8.64/pdf.worker.min.mjs`;
         }
 
-        return () => {
-            isMounted = false;
-            if (objectUrl) {
-                URL.revokeObjectURL(objectUrl);
-            }
-        };
-    }, [url, loadAttempts, isIOS, useSimpleMode]);
+        if (resolvedUrl) {
+            // No intentional delay for simple mode; small delay for standard mode to stabilize mem
+            const delay = useSimpleMode ? 0 : (isIOS ? 500 : 200);
+            const timer = setTimeout(() => {
+                if (isMounted) setReadyToRender(true);
+            }, delay);
+            return () => {
+                isMounted = false;
+                clearTimeout(timer);
+            };
+        }
+    }, [resolvedUrl, loadAttempts, isIOS, useSimpleMode]);
+
+    // Manual metadata fetch for Simple Mode (if numPages hasn't been set yet)
+    useEffect(() => {
+        if (useSimpleMode && resolvedUrl && numPages === 0) {
+            const getMeta = async () => {
+                try {
+                    const loadingTask = pdfjs.getDocument(resolvedUrl);
+                    const pdf = await loadingTask.promise;
+                    if (numPages === 0) setNumPages(pdf.numPages);
+                } catch (e) {
+                    console.warn('Metadata fetch failed for Simple Mode:', e);
+                }
+            };
+            getMeta();
+        }
+    }, [useSimpleMode, resolvedUrl, numPages, setNumPages]);
 
     // Simplified Mobile Detection that responds to window availability
     const [isSmallScreen, setIsSmallScreen] = useState(false);
     useEffect(() => {
+        if (typeof window === 'undefined') return;
         setIsSmallScreen(window.innerWidth < 768);
         const handleResize = () => setIsSmallScreen(window.innerWidth < 768);
         window.addEventListener('resize', handleResize);
@@ -416,12 +446,13 @@ function PDFViewerContent({
                             <div className="w-12 h-12 border-4 border-[#2B669A] border-t-transparent rounded-full animate-spin"></div>
                             <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Initializing Reader Engine...</p>
                         </div>
-                    ) : useSimpleMode ? (
-                        <div className="flex-1 w-full bg-slate-900 overflow-hidden">
+                    ) : (useSimpleMode && resolvedUrl) ? (
+                        <div className="flex-1 w-full bg-slate-900 flex flex-col items-center">
                             <iframe
-                                src={`${resolvedUrl}#toolbar=0&navpanes=0`}
+                                src={`${resolvedUrl}#page=${pageNumber}&toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
                                 className="w-full h-full border-none"
                                 title="Safe PDF Viewer"
+                                style={{ display: 'block' }}
                             />
                         </div>
                     ) : (
