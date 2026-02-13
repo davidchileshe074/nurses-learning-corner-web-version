@@ -38,15 +38,24 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
     const [fileData, setFileData] = useState<any>(null);
     const [loadAttempts, setLoadAttempts] = useState(0);
 
+    // iOS Detection
+    const isIOS = useMemo(() => {
+        if (typeof window === 'undefined') return false;
+        return /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }, []);
+
     // Optimized DPR for mobile to prevent memory crashes on iOS
     const dpr = useMemo(() => {
         if (typeof window === 'undefined') return 1;
+        if (isIOS) return 1.0; // Force 1.0 on iOS for stability
+
         // Reduced to 1.0 on very small screens for maximum stability
         const isSmallMobile = window.innerWidth < 480;
         const isMobile = window.innerWidth < 768;
         if (isSmallMobile) return 1.0;
         return isMobile ? 1.2 : Math.min(window.devicePixelRatio || 1, 2);
-    }, []);
+    }, [isIOS]);
 
     const isMobileUI = useMemo(() => typeof window !== 'undefined' && window.innerWidth < 768, []);
 
@@ -113,7 +122,10 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
         }
 
         setIsLoading(false);
-        if (error.message.includes('Worker')) {
+        // More descriptive error for iOS users
+        if (isIOS) {
+            setLoadError('iOS Memory Limit: The document may be too large to render in-app.');
+        } else if (error.message.includes('Worker')) {
             setLoadError('Educational engine initialization failed. Please check your internet connection and try again.');
         } else {
             setLoadError('Unable to render clinical document. The file might be corrupted or too large for this device.');
@@ -172,13 +184,14 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
         disableAutoFetch: true, // Prevent background fetching too many pages at once
     }), []);
 
+
     return (
         <div
             className="fixed inset-0 z-50 bg-slate-950 flex flex-col overflow-hidden"
             style={{ height: '100dvh', overscrollBehavior: 'none' }}
         >
             {/* Top Bar */}
-            <div className="h-14 sm:h-16 px-4 sm:px-6 bg-slate-900/50 backdrop-blur-lg border-b border-white/5 flex items-center justify-between shrink-0 safe-top">
+            <div className={`h-14 sm:h-16 px-4 sm:px-6 bg-slate-900/50 backdrop-blur-lg border-b border-white/5 flex items-center justify-between shrink-0 safe-top ${isIOS ? 'pt-2' : ''}`}>
                 <div className="flex items-center gap-4">
                     <button
                         onClick={onClose}
@@ -261,7 +274,7 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
                             </div>
                             <div className="max-w-xs">
                                 <p className="text-red-400 font-bold text-sm">{loadError}</p>
-                                <p className="text-slate-500 text-[10px] mt-2 leading-relaxed">Large clinical documents may exceed your device's available memory. Try Safe Mode for better stability.</p>
+                                <p className="text-slate-500 text-[10px] mt-2 leading-relaxed">Large clinical documents may exceed your device's available memory.</p>
                             </div>
 
                             <div className="flex flex-col gap-3 w-full max-w-xs mt-4">
@@ -299,9 +312,9 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
                                     scale={isMobileUI ? (showNotes ? scale * 0.6 : scale * 0.9) : (showNotes ? scale * 0.7 : scale)}
                                     devicePixelRatio={dpr}
                                     width={typeof window !== 'undefined' ? (window.innerWidth < 640 ? window.innerWidth : Math.min(window.innerWidth * 0.85, 1200)) : undefined}
-                                    // High-memory layers disabled on mobile for stability
-                                    renderAnnotationLayer={!isMobileUI}
-                                    renderTextLayer={!isMobileUI}
+                                    // High-memory layers disabled on mobile/iOS for stability
+                                    renderAnnotationLayer={!isMobileUI && !isIOS}
+                                    renderTextLayer={!isMobileUI && !isIOS}
                                     renderMode="canvas"
                                     className="overflow-hidden !bg-slate-900 shadow-2xl shadow-black/80"
                                     loading={
@@ -340,7 +353,8 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
                     <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
                     <div className="flex flex-col">
                         <span className="text-[9px] font-bold text-slate-100 uppercase tracking-tighter">Page {pageNumber} Synced</span>
-                        {isMobileUI && <span className="text-[7px] font-black text-blue-400 uppercase tracking-widest mt-0.5">Mobile Safe Mode Active</span>}
+                        {isIOS && <span className="text-[7px] font-black text-amber-500 uppercase tracking-widest mt-0.5">iOS Optimized Mode</span>}
+                        {!isIOS && isMobileUI && <span className="text-[7px] font-black text-blue-400 uppercase tracking-widest mt-0.5">Mobile Safe Mode</span>}
                     </div>
                 </div>
             </div>

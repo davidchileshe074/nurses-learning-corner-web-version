@@ -19,7 +19,6 @@ const PDFViewer = dynamic(() => import('@/components/PDFViewer').then(mod => mod
     ),
     ssr: false
 });
-import { noteServices } from '@/services/notes';
 import { subscriptionServices } from '@/services/subscription';
 import { useRouter } from 'next/navigation';
 import { activityServices } from '@/services/activity';
@@ -308,17 +307,17 @@ function ContentDetailsContent() {
                                 {isDownloading ? (
                                     <>
                                         <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                                        Downloading...
+                                        Saving...
                                     </>
                                 ) : isDownloaded ? (
                                     <>
                                         <CheckCircle size={20} />
-                                        Downloaded
+                                        Saved Offline
                                     </>
                                 ) : (
                                     <>
                                         <Download size={20} />
-                                        Download
+                                        Save for Offline
                                     </>
                                 )}
                             </button>
@@ -331,7 +330,7 @@ function ContentDetailsContent() {
                                 onClick={() => router.push('/downloads')}
                                 className="mt-4 w-full py-3 bg-slate-50 text-slate-600 rounded-xl font-bold text-xs uppercase tracking-wide hover:bg-slate-100 transition-all"
                             >
-                                View in Downloads
+                                View in Offline Library
                             </motion.button>
                         )}
                     </div>
