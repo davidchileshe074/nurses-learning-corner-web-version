@@ -8,8 +8,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { noteServices } from '@/services/notes';
 import { NoteEditor } from './NoteEditor';
 
-// Set worker for react-pdf using local file for stability
-pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+// Set worker for react-pdf using local legacy file for maximum iOS compatibility
+pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
 
 interface PDFViewerProps {
     url: string | Blob;
@@ -126,9 +126,9 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
         return () => window.removeEventListener('keydown', handleKeyPress);
     }, [pageNumber, numPages, onClose]);
 
-    // Set worker source to local public file for maximum reliability and no CORS issues
+    // Set worker source to local legacy file for maximum reliability and no CORS issues
     useEffect(() => {
-        pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+        pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
     }, []);
 
     const options = useMemo(() => ({
