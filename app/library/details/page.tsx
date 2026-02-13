@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect } from 'react';
 import { contentServices } from '@/services/content';
 import { Content } from '@/types';
 import { storage, config } from '@/lib/appwrite';
@@ -40,7 +40,7 @@ function ContentDetailsContent() {
 
     // Viewer State
     const [isViewing, setIsViewing] = useState(false);
-    const [viewerUrl, setViewerUrl] = useState<string>('');
+    const [viewerUrl, setViewerUrl] = useState<string | Blob>('');
     const [initialPage, setInitialPage] = useState(1);
     const [showResumeModal, setShowResumeModal] = useState(false);
     const [savedPage, setSavedPage] = useState(1);
@@ -160,11 +160,11 @@ function ContentDetailsContent() {
         }
 
         const fileId = content.fileId || (content as any).storageFileId;
-        let url = '';
+        let url: string | Blob = '';
 
         if (cached && cached.blob instanceof Blob) {
             // Pass the raw blob directly; the PDFViewer now handles binary conversion for iOS
-            url = cached.blob as any;
+            url = cached.blob;
         } else if (fileId) {
             url = storage.getFileView(config.bucketId, fileId).toString();
         } else if (content.url) {
@@ -291,7 +291,7 @@ function ContentDetailsContent() {
                                 className="flex-1 py-4 bg-[#2B669A] hover:bg-[#234f7a] text-white rounded-xl font-bold text-sm uppercase tracking-wide shadow-lg shadow-[#2B669A]/20 transition-all flex items-center justify-center gap-2"
                             >
                                 <BookOpen size={20} />
-                                Open Material
+                                Open Material 2
                             </button>
 
                             <button

@@ -35,7 +35,6 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
     const [isLoading, setIsLoading] = useState(true);
     const [showNotes, setShowNotes] = useState(false);
     const [loadError, setLoadError] = useState<string | null>(null);
-    const [fileData, setFileData] = useState<any>(null);
     const [loadAttempts, setLoadAttempts] = useState(0);
 
     // iOS Detection
@@ -58,50 +57,6 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
     }, [isIOS]);
 
     const isMobileUI = useMemo(() => typeof window !== 'undefined' && window.innerWidth < 768, []);
-
-    // Manual fetch with timeout and retry logic for iOS reliability
-    useEffect(() => {
-        const loadFile = async () => {
-            if (!url) return;
-
-            try {
-                // If it's a blob URL or a remote URL, fetch it manually
-                if (typeof url === 'string' && (url.startsWith('blob:') || url.startsWith('http'))) {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
-
-                    const response = await fetch(url, { signal: controller.signal });
-                    clearTimeout(timeoutId);
-
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                    const arrayBuffer = await response.arrayBuffer();
-                    setFileData({ data: arrayBuffer });
-                } else if (url instanceof Blob || (url && (url as any).constructor?.name === 'Blob')) {
-                    // Handle raw Blob objects directly
-                    const arrayBuffer = await (url as Blob).arrayBuffer();
-                    setFileData({ data: arrayBuffer });
-                } else {
-                    setFileData(url);
-                }
-            } catch (error: any) {
-                console.error('Fetch error in PDFViewer:', error);
-                // Fallback to direct URL if fetch fails
-                if (typeof url === 'string') {
-                    setFileData(url);
-                } else {
-                    setLoadError(`Initialization Error: ${error.message || 'Network failure'}`);
-                    setIsLoading(false);
-                }
-            }
-        };
-
-        // iOS stability: Add a slight delay before initial load to ensure WebView is ready
-        const timer = setTimeout(loadFile, 300);
-        return () => {
-            clearTimeout(timer);
-            setFileData(null);
-        };
-    }, [url, loadAttempts]);
 
     function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
         console.log('PDF loaded successfully:', numPages, 'pages');
@@ -260,12 +215,7 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
             <div className="flex-1 flex overflow-hidden relative">
                 {/* PDF Area */}
                 <div className={`flex-1 overflow-auto bg-slate-950 p-0 sm:p-8 flex flex-col items-center custom-scrollbar transition-all duration-500 ${showNotes ? 'lg:mr-96 xl:mr-[500px]' : ''}`}>
-                    {(!fileData && isLoading) ? (
-                        <div className="flex-1 flex flex-col items-center justify-center min-h-[50vh] gap-4 text-center px-6">
-                            <div className="w-12 h-12 border-4 border-[#2B669A] border-t-transparent rounded-full animate-spin"></div>
-                            <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Downloading Secure Document...</p>
-                        </div>
-                    ) : loadError ? (
+                    {loadError ? (
                         <div className="flex-1 flex flex-col items-center justify-center min-h-[50vh] gap-4 text-center px-6">
                             <div className="w-20 h-20 bg-red-900/20 rounded-full flex items-center justify-center">
                                 <svg className="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -294,7 +244,7 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
                         </div>
                     ) : (
                         <Document
-                            file={fileData || url}
+                            file={url}
                             onLoadSuccess={onDocumentLoadSuccess}
                             onLoadError={onDocumentLoadError}
                             loading={
