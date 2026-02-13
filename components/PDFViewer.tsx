@@ -8,13 +8,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { noteServices } from '@/services/notes';
 import { NoteEditor } from './NoteEditor';
 
-// Set worker for react-pdf using a more robust URL resolution for iOS compatibility
-// Using the legacy build as it is more compatible with older Safari versions and Mobile WebViews
+// Set worker for react-pdf using unpkg with legacy build for maximum iOS compatibility
 const PDFJS_VERSION = pdfjs.version;
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${PDFJS_VERSION}/legacy/build/pdf.worker.min.js`;
 
 interface PDFViewerProps {
-    url: string;
+    url: string | Blob;
     userId: string;
     contentId: string;
     initialPage?: number;
@@ -28,12 +27,54 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
     const [isLoading, setIsLoading] = useState(true);
     const [showNotes, setShowNotes] = useState(false);
     const [loadError, setLoadError] = useState<string | null>(null);
+    const [fileData, setFileData] = useState<any>(null);
 
     // Optimized DPR for mobile to prevent memory crashes on iOS
     const dpr = useMemo(() => {
         if (typeof window === 'undefined') return 1;
-        return Math.min(window.devicePixelRatio || 1, 2);
+        // Reduced to 1.2 max for better memory performance on iOS devices (Retina is usually 2 or 3, but 1.2 is enough for legibility)
+        const isMobile = window.innerWidth < 768;
+        return isMobile ? 1.2 : Math.min(window.devicePixelRatio || 1, 2);
     }, []);
+
+    const isMobileUI = useMemo(() => typeof window !== 'undefined' && window.innerWidth < 768, []);
+
+    // Manual fetch to bypass potential pdf.js networking quirks on iOS Safari/Capacitor
+    useEffect(() => {
+        const loadFile = async () => {
+            if (!url) return;
+
+            // If it's a blob URL or a remote URL, fetch it manually to ensure session/CORS/iOS binary compliance
+            if (typeof url === 'string' && (url.startsWith('blob:') || url.startsWith('http'))) {
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const arrayBuffer = await response.arrayBuffer();
+                    setFileData({ data: arrayBuffer });
+                } catch (error) {
+                    console.error('Fetch error in PDFViewer:', error);
+                    // Fallback to direct URL if fetch fails
+                    setFileData(url);
+                }
+            } else if (url instanceof Blob) {
+                // Handle raw Blob objects directly
+                try {
+                    const arrayBuffer = await url.arrayBuffer();
+                    setFileData({ data: arrayBuffer });
+                } catch (e) {
+                    setFileData(url);
+                }
+            } else {
+                setFileData(url);
+            }
+        };
+        loadFile();
+
+        return () => {
+            // Clean up file data to release memory
+            setFileData(null);
+        };
+    }, [url]);
 
     function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
         console.log('PDF loaded successfully:', numPages, 'pages');
@@ -86,16 +127,23 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
         return () => window.removeEventListener('keydown', handleKeyPress);
     }, [pageNumber, numPages, onClose]);
 
+    // Set worker and options with local fallback or dynamic version
+    const version = useMemo(() => pdfjs.version || '4.8.69', []);
+
+    useEffect(() => {
+        pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${version}/legacy/build/pdf.worker.min.js`;
+    }, [version]);
+
     const options = useMemo(() => ({
-        cMapUrl: `https://unpkg.com/pdfjs-dist@${PDFJS_VERSION}/cmaps/`,
+        cMapUrl: `https://unpkg.com/pdfjs-dist@${version}/cmaps/`,
         cMapPacked: true,
-        standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${PDFJS_VERSION}/standard_fonts/`,
+        standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${version}/standard_fonts/`,
         enableXfa: false,
         isEvalSupported: false,
         // iOS Fixes: Disable range requests and streaming to prevent hangs on some Safari versions
         disableRange: true,
         disableStream: true,
-    }), [PDFJS_VERSION]);
+    }), [version]);
 
     return (
         <div
@@ -172,30 +220,41 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
             <div className="flex-1 flex overflow-hidden relative">
                 {/* PDF Area */}
                 <div className={`flex-1 overflow-auto bg-slate-950 p-0 sm:p-8 flex flex-col items-center custom-scrollbar transition-all duration-500 ${showNotes ? 'lg:mr-96 xl:mr-[500px]' : ''}`}>
-                    {loadError ? (
+                    {(!fileData && isLoading) ? (
+                        <div className="flex-1 flex flex-col items-center justify-center min-h-[50vh] gap-4 text-center px-6">
+                            <div className="w-12 h-12 border-4 border-[#2B669A] border-t-transparent rounded-full animate-spin"></div>
+                            <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Downloading Secure Document...</p>
+                        </div>
+                    ) : loadError ? (
                         <div className="flex-1 flex flex-col items-center justify-center min-h-[50vh] gap-4 text-center px-6">
                             <div className="w-20 h-20 bg-red-900/20 rounded-full flex items-center justify-center">
                                 <svg className="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             </div>
-                            <p className="text-red-400 font-bold text-sm max-w-xs">{loadError}</p>
-                            <button
-                                onClick={() => window.location.reload()}
-                                className="mt-4 px-6 py-3 bg-red-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-red-500 transition-colors"
-                            >
-                                Reload Reader
-                            </button>
-                            <button
-                                onClick={onClose}
-                                className="px-6 py-3 bg-slate-800 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-slate-700 transition-colors"
-                            >
-                                Go Back
-                            </button>
+                            <div className="max-w-xs">
+                                <p className="text-red-400 font-bold text-sm">{loadError}</p>
+                                <p className="text-slate-500 text-[10px] mt-2 leading-relaxed">Large clinical documents may exceed your device's available memory. Try Safe Mode for better stability.</p>
+                            </div>
+
+                            <div className="flex flex-col gap-3 w-full max-w-xs mt-4">
+                                <button
+                                    onClick={() => window.location.reload()}
+                                    className="w-full px-6 py-4 bg-red-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-red-500 transition-colors"
+                                >
+                                    Reload Reader
+                                </button>
+                                <button
+                                    onClick={onClose}
+                                    className="w-full px-6 py-4 bg-slate-800 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-slate-700 transition-colors"
+                                >
+                                    Go Back
+                                </button>
+                            </div>
                         </div>
                     ) : (
                         <Document
-                            file={url}
+                            file={fileData || url}
                             onLoadSuccess={onDocumentLoadSuccess}
                             onLoadError={onDocumentLoadError}
                             loading={
@@ -210,11 +269,12 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
                             <div className="flex-1 flex items-center justify-center w-full min-h-full py-12 scroll-mt-20">
                                 <Page
                                     pageNumber={pageNumber}
-                                    scale={showNotes ? scale * 0.7 : scale}
+                                    scale={isMobileUI ? (showNotes ? scale * 0.6 : scale * 0.9) : (showNotes ? scale * 0.7 : scale)}
                                     devicePixelRatio={dpr}
-                                    width={typeof window !== 'undefined' ? (window.innerWidth < 640 ? window.innerWidth : Math.min(window.innerWidth * 0.85, 1000)) : undefined}
-                                    renderAnnotationLayer={true}
-                                    renderTextLayer={true}
+                                    width={typeof window !== 'undefined' ? (window.innerWidth < 640 ? window.innerWidth : Math.min(window.innerWidth * 0.85, 1200)) : undefined}
+                                    // High-memory layers disabled on mobile for stability
+                                    renderAnnotationLayer={!isMobileUI}
+                                    renderTextLayer={!isMobileUI}
                                     renderMode="canvas"
                                     className="overflow-hidden !bg-slate-900 shadow-2xl shadow-black/80"
                                     loading={
@@ -249,9 +309,12 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
 
             {/* Sync Status Badge */}
             <div className={`absolute bottom-8 left-8 transition-opacity duration-1000 ${isLoading ? 'opacity-0' : 'opacity-100'}`}>
-                <div className="px-4 py-2 bg-slate-900/80 backdrop-blur-md rounded-xl border border-slate-800/50 flex items-center gap-2">
+                <div className="px-4 py-2 bg-slate-900/80 backdrop-blur-md rounded-xl border border-slate-800/50 flex items-center gap-3">
                     <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Page {pageNumber} Synced</span>
+                    <div className="flex flex-col">
+                        <span className="text-[9px] font-bold text-slate-100 uppercase tracking-tighter">Page {pageNumber} Synced</span>
+                        {isMobileUI && <span className="text-[7px] font-black text-blue-400 uppercase tracking-widest mt-0.5">Mobile Safe Mode Active</span>}
+                    </div>
                 </div>
             </div>
         </div>

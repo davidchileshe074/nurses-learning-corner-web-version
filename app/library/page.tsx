@@ -21,7 +21,6 @@ import {
     Globe,
     Download,
     FileText,
-    Mic,
     CheckCircle,
     ArrowUpRight,
     SearchX,
@@ -50,7 +49,7 @@ const COURSES = [
     'Nursing Care Plan'
 ];
 
-const FILTER_OPTIONS = ['All', 'Downloads', 'PDF', 'Audio', 'Past Paper', 'Marking Key', 'Others'];
+const FILTER_OPTIONS = ['All', 'Downloads', 'PDF', 'Past Paper', 'Marking Key', 'Others'];
 
 export default function LibraryPage() {
     const { profile, user } = useAuthStore();
@@ -349,7 +348,6 @@ export default function LibraryPage() {
                                 <div className="flex items-center gap-2">
                                     {opt === 'Downloads' && <Download size={14} />}
                                     {opt === 'PDF' && <FileText size={14} />}
-                                    {opt === 'Audio' && <Mic size={14} />}
                                     {opt === 'All' && <LayoutGrid size={14} />}
                                     {opt}
                                 </div>

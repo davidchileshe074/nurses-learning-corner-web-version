@@ -43,10 +43,8 @@ export default function DownloadsPage() {
     };
 
     const handleOpenContent = (item: CachedContent) => {
-        // Re-wrap blob to ensure MIME type is application/pdf for iOS compatibility
-        const pdfBlob = new Blob([item.blob], { type: 'application/pdf' });
-        const url = URL.createObjectURL(pdfBlob);
-        setViewingItem({ url, item });
+        // Pass the raw blob directly; the PDFViewer now handles binary conversion for iOS
+        setViewingItem({ url: item.blob as any, item });
     };
 
     const handleDeleteDownload = async (id: string, e: React.MouseEvent) => {
@@ -158,7 +156,6 @@ export default function DownloadsPage() {
                             userId={user.$id}
                             contentId={viewingItem.item.$id}
                             onClose={() => {
-                                URL.revokeObjectURL(viewingItem.url);
                                 setViewingItem(null);
                             }}
                         />

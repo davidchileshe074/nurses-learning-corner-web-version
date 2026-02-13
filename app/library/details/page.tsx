@@ -164,9 +164,8 @@ function ContentDetailsContent() {
         let url = '';
 
         if (cached && cached.blob instanceof Blob) {
-            // Re-wrap blob to ensure MIME type is application/pdf (needed for iOS Safari)
-            const pdfBlob = new Blob([cached.blob], { type: 'application/pdf' });
-            url = URL.createObjectURL(pdfBlob);
+            // Pass the raw blob directly; the PDFViewer now handles binary conversion for iOS
+            url = cached.blob as any;
         } else if (fileId) {
             url = storage.getFileView(config.bucketId, fileId).toString();
         } else if (content.url) {
@@ -403,9 +402,6 @@ function ContentDetailsContent() {
                             contentId={content.$id}
                             initialPage={initialPage}
                             onClose={() => {
-                                if (viewerUrl.startsWith('blob:')) {
-                                    URL.revokeObjectURL(viewerUrl);
-                                }
                                 setIsViewing(false);
                             }}
                         />

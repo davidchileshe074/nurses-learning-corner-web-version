@@ -50,10 +50,9 @@ export const contentServices = {
             // Map web filter labels to DB types if necessary, or use as is
             // Based on RN: filterOptions = ['All', 'Downloads', 'PDF', 'Audio', 'Past Paper', 'Marking Key', 'Others'];
             if (type === 'PDF') queries.push(Query.equal('type', 'PDF'));
-            else if (type === 'Audio') queries.push(Query.equal('type', 'AUDIO'));
             else if (type === 'Past Paper') queries.push(Query.equal('type', 'PAST_PAPER'));
             else if (type === 'Marking Key') queries.push(Query.equal('type', 'MARKING_KEY'));
-            else if (type === 'Others') queries.push(Query.notEqual('type', ['PDF', 'AUDIO', 'PAST_PAPER', 'MARKING_KEY']));
+            else if (type === 'Others') queries.push(Query.notEqual('type', ['PDF', 'PAST_PAPER', 'MARKING_KEY']));
         }
 
         if (!config.databaseId || !config.contentCollectionId) {
