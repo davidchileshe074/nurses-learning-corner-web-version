@@ -35,7 +35,7 @@ class PDRErrorBoundary extends Component<{ children: ReactNode; fallback: ReactN
 // Set worker for react-pdf using local file confirmed in public directory
 const getWorkerSrc = () => {
     if (typeof window === 'undefined') return null;
-    return '/pdf.worker.min.mjs';
+    return '/pdf.worker.min.js';
 };
 
 interface PDFViewerProps {
@@ -99,27 +99,55 @@ function PDFViewerContent({ url, userId, contentId, initialPage = 1, onClose }: 
 
     // Handle Blob conversion and Worker Initialization
     useEffect(() => {
-        // Set worker
-        const workerSrc = getWorkerSrc();
-        if (workerSrc) {
-            pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
-        }
-
+        let isMounted = true;
         let objectUrl: string | null = null;
 
-        if (url instanceof Blob) {
-            objectUrl = URL.createObjectURL(url);
-            setResolvedUrl(objectUrl);
-        } else {
-            setResolvedUrl(url as string);
-        }
+        const init = async () => {
+            // Set worker source logic - only assign if it hasn't been assigned or needs retry
+            const currentWorker = pdfjs.GlobalWorkerOptions.workerSrc;
+            const targetWorker = loadAttempts === 0
+                ? getWorkerSrc()
+                : `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+
+            if (targetWorker && currentWorker !== targetWorker) {
+                pdfjs.GlobalWorkerOptions.workerSrc = targetWorker;
+            }
+
+            if (!url) return;
+
+            try {
+                if (url instanceof Blob) {
+                    objectUrl = URL.createObjectURL(url);
+                    if (isMounted) setResolvedUrl(objectUrl);
+                } else {
+                    if (isMounted) setResolvedUrl(url as string);
+                }
+            } catch (err) {
+                console.error("URL resolution error:", err);
+                if (isMounted) setLoadError("Failed to initialize document source.");
+            }
+        };
+
+        init();
 
         return () => {
+            isMounted = false;
             if (objectUrl) {
                 URL.revokeObjectURL(objectUrl);
             }
         };
-    }, [url]);
+    }, [url, loadAttempts]);
+
+    // Simplified Mobile Detection that responds to window availability
+    const [isSmallScreen, setIsSmallScreen] = useState(false);
+    useEffect(() => {
+        setIsSmallScreen(window.innerWidth < 768);
+        const handleResize = () => setIsSmallScreen(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    const isMobileUI = isSmallScreen;
 
     // Optimized DPR for mobile to prevent memory crashes on iOS
     const dpr = useMemo(() => {
@@ -132,8 +160,6 @@ function PDFViewerContent({ url, userId, contentId, initialPage = 1, onClose }: 
         if (isSmallMobile) return 1.0;
         return isMobile ? 1.2 : Math.min(window.devicePixelRatio || 1, 2);
     }, [isIOS]);
-
-    const isMobileUI = useMemo(() => typeof window !== 'undefined' && window.innerWidth < 768, []);
 
     function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
         console.log('PDF loaded successfully:', numPages, 'pages');
@@ -148,7 +174,7 @@ function PDFViewerContent({ url, userId, contentId, initialPage = 1, onClose }: 
         // If it failed and we haven't retried with CDN worker yet, try that
         if (loadAttempts === 0 && (error.message.includes('Worker') || error.message.includes('setting up'))) {
             console.warn('Local worker failed, retrying with CDN worker...');
-            pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+            pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
             setLoadAttempts(1);
             return;
         }
@@ -311,6 +337,11 @@ function PDFViewerContent({ url, userId, contentId, initialPage = 1, onClose }: 
                                     Go Back
                                 </button>
                             </div>
+                        </div>
+                    ) : !resolvedUrl ? (
+                        <div className="flex-1 flex flex-col items-center justify-center min-h-[50vh] gap-4 text-center px-6">
+                            <div className="w-12 h-12 border-4 border-[#2B669A] border-t-transparent rounded-full animate-spin"></div>
+                            <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Initializing Reader Engine...</p>
                         </div>
                     ) : (
                         <Document
