@@ -32,11 +32,10 @@ class PDRErrorBoundary extends Component<{ children: ReactNode; fallback: ReactN
     }
 }
 
-// Set worker for react-pdf using modern mjs file with absolute path for Capacitor stability
-// We use a fallback to CDN if the local worker fails to load
+// Set worker for react-pdf using local file confirmed in public directory
 const getWorkerSrc = () => {
     if (typeof window === 'undefined') return null;
-    return `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+    return '/pdf.worker.min.mjs';
 };
 
 interface PDFViewerProps {
@@ -89,6 +88,7 @@ function PDFViewerContent({ url, userId, contentId, initialPage = 1, onClose }: 
     const [showNotes, setShowNotes] = useState(false);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [loadAttempts, setLoadAttempts] = useState(0);
+    const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
 
     // iOS Detection
     const isIOS = useMemo(() => {
@@ -96,6 +96,30 @@ function PDFViewerContent({ url, userId, contentId, initialPage = 1, onClose }: 
         return /iPhone|iPad|iPod/.test(navigator.userAgent) ||
             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     }, []);
+
+    // Handle Blob conversion and Worker Initialization
+    useEffect(() => {
+        // Set worker
+        const workerSrc = getWorkerSrc();
+        if (workerSrc) {
+            pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
+        }
+
+        let objectUrl: string | null = null;
+
+        if (url instanceof Blob) {
+            objectUrl = URL.createObjectURL(url);
+            setResolvedUrl(objectUrl);
+        } else {
+            setResolvedUrl(url as string);
+        }
+
+        return () => {
+            if (objectUrl) {
+                URL.revokeObjectURL(objectUrl);
+            }
+        };
+    }, [url]);
 
     // Optimized DPR for mobile to prevent memory crashes on iOS
     const dpr = useMemo(() => {
@@ -172,14 +196,6 @@ function PDFViewerContent({ url, userId, contentId, initialPage = 1, onClose }: 
         window.addEventListener('keydown', handleKeyPress);
         return () => window.removeEventListener('keydown', handleKeyPress);
     }, [pageNumber, numPages, onClose]);
-
-    // Ensure worker source is set on mount
-    useEffect(() => {
-        if (loadAttempts === 0) {
-            const src = getWorkerSrc();
-            if (src) pdfjs.GlobalWorkerOptions.workerSrc = src;
-        }
-    }, [loadAttempts]);
 
     const options = useMemo(() => ({
         cMapUrl: '/cmaps/',
@@ -298,7 +314,7 @@ function PDFViewerContent({ url, userId, contentId, initialPage = 1, onClose }: 
                         </div>
                     ) : (
                         <Document
-                            file={url}
+                            file={resolvedUrl}
                             onLoadSuccess={onDocumentLoadSuccess}
                             onLoadError={onDocumentLoadError}
                             loading={
