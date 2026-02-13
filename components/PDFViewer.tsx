@@ -8,9 +8,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { noteServices } from '@/services/notes';
 import { NoteEditor } from './NoteEditor';
 
-// Set worker for react-pdf using unpkg with legacy build for maximum iOS compatibility
-const PDFJS_VERSION = pdfjs.version;
-pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${PDFJS_VERSION}/legacy/build/pdf.worker.min.js`;
+// Set worker for react-pdf using CDN for stability
+pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
 
 interface PDFViewerProps {
     url: string | Blob;
@@ -127,17 +126,17 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
         return () => window.removeEventListener('keydown', handleKeyPress);
     }, [pageNumber, numPages, onClose]);
 
-    // Set worker and options with local fallback or dynamic version
-    const version = useMemo(() => pdfjs.version || '4.8.69', []);
+    const version = pdfjs.version;
 
+    // Set worker source
     useEffect(() => {
-        pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${version}/legacy/build/pdf.worker.min.js`;
+        pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/pdf.worker.min.mjs`;
     }, [version]);
 
     const options = useMemo(() => ({
-        cMapUrl: `https://unpkg.com/pdfjs-dist@${version}/cmaps/`,
+        cMapUrl: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/cmaps/`,
         cMapPacked: true,
-        standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${version}/standard_fonts/`,
+        standardFontDataUrl: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/standard_fonts/`,
         enableXfa: false,
         isEvalSupported: false,
         // iOS Fixes: Disable range requests and streaming to prevent hangs on some Safari versions
