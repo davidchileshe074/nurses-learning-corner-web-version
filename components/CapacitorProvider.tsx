@@ -5,6 +5,7 @@ import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { Keyboard } from '@capacitor/keyboard';
 import { App } from '@capacitor/app';
+import { SplashScreen } from '@capacitor/splash-screen';
 import { useRouter, usePathname } from 'next/navigation';
 
 export function CapacitorProvider({ children }: { children: React.ReactNode }) {
@@ -18,8 +19,6 @@ export function CapacitorProvider({ children }: { children: React.ReactNode }) {
         const initStatusBar = async () => {
             try {
                 await StatusBar.setStyle({ style: Style.Light });
-                // On iOS we usually want it to be transparent/overlapped (handled by black-translucent usually)
-                // but for Android we might want to set a color
                 if (Capacitor.getPlatform() === 'android') {
                     await StatusBar.setBackgroundColor({ color: '#F3F5F7' });
                 }
@@ -46,9 +45,19 @@ export function CapacitorProvider({ children }: { children: React.ReactNode }) {
             }
         };
 
+        // 4. Hide Splash Screen
+        const hideSplash = async () => {
+            try {
+                await SplashScreen.hide();
+            } catch (e) {
+                console.warn('SplashScreen hide error:', e);
+            }
+        };
+
         initStatusBar();
         initBackButton();
         initKeyboard();
+        hideSplash();
 
         return () => {
             App.removeAllListeners();

@@ -8,8 +8,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { noteServices } from '@/services/notes';
 import { NoteEditor } from './NoteEditor';
 
-// Set worker for react-pdf using local legacy file for maximum iOS compatibility
-pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+// Set worker for react-pdf using modern mjs file with absolute path for Capacitor stability
+// We use a fallback to CDN if the local worker fails to load
+const getWorkerSrc = () => {
+    if (typeof window === 'undefined') return '/pdf.worker.min.mjs';
+
+    // In Capacitor, we want to use the absolute URL to the local file
+    const localWorker = `${window.location.origin}/pdf.worker.min.mjs`;
+    return localWorker;
+};
+
+pdfjs.GlobalWorkerOptions.workerSrc = getWorkerSrc();
 
 interface PDFViewerProps {
     url: string | Blob;
@@ -27,53 +36,63 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
     const [showNotes, setShowNotes] = useState(false);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [fileData, setFileData] = useState<any>(null);
+    const [loadAttempts, setLoadAttempts] = useState(0);
 
     // Optimized DPR for mobile to prevent memory crashes on iOS
     const dpr = useMemo(() => {
         if (typeof window === 'undefined') return 1;
-        // Reduced to 1.2 max for better memory performance on iOS devices (Retina is usually 2 or 3, but 1.2 is enough for legibility)
+        // Reduced to 1.0 on very small screens for maximum stability
+        const isSmallMobile = window.innerWidth < 480;
         const isMobile = window.innerWidth < 768;
+        if (isSmallMobile) return 1.0;
         return isMobile ? 1.2 : Math.min(window.devicePixelRatio || 1, 2);
     }, []);
 
     const isMobileUI = useMemo(() => typeof window !== 'undefined' && window.innerWidth < 768, []);
 
-    // Manual fetch to bypass potential pdf.js networking quirks on iOS Safari/Capacitor
+    // Manual fetch with timeout and retry logic for iOS reliability
     useEffect(() => {
         const loadFile = async () => {
             if (!url) return;
 
-            // If it's a blob URL or a remote URL, fetch it manually to ensure session/CORS/iOS binary compliance
-            if (typeof url === 'string' && (url.startsWith('blob:') || url.startsWith('http'))) {
-                try {
-                    const response = await fetch(url);
+            try {
+                // If it's a blob URL or a remote URL, fetch it manually
+                if (typeof url === 'string' && (url.startsWith('blob:') || url.startsWith('http'))) {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
+                    const response = await fetch(url, { signal: controller.signal });
+                    clearTimeout(timeoutId);
+
                     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                     const arrayBuffer = await response.arrayBuffer();
                     setFileData({ data: arrayBuffer });
-                } catch (error) {
-                    console.error('Fetch error in PDFViewer:', error);
-                    // Fallback to direct URL if fetch fails
-                    setFileData(url);
-                }
-            } else if (url instanceof Blob) {
-                // Handle raw Blob objects directly
-                try {
-                    const arrayBuffer = await url.arrayBuffer();
+                } else if (url instanceof Blob || (url && (url as any).constructor?.name === 'Blob')) {
+                    // Handle raw Blob objects directly
+                    const arrayBuffer = await (url as Blob).arrayBuffer();
                     setFileData({ data: arrayBuffer });
-                } catch (e) {
+                } else {
                     setFileData(url);
                 }
-            } else {
-                setFileData(url);
+            } catch (error: any) {
+                console.error('Fetch error in PDFViewer:', error);
+                // Fallback to direct URL if fetch fails
+                if (typeof url === 'string') {
+                    setFileData(url);
+                } else {
+                    setLoadError(`Initialization Error: ${error.message || 'Network failure'}`);
+                    setIsLoading(false);
+                }
             }
         };
-        loadFile();
 
+        // iOS stability: Add a slight delay before initial load to ensure WebView is ready
+        const timer = setTimeout(loadFile, 300);
         return () => {
-            // Clean up file data to release memory
+            clearTimeout(timer);
             setFileData(null);
         };
-    }, [url]);
+    }, [url, loadAttempts]);
 
     function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
         console.log('PDF loaded successfully:', numPages, 'pages');
@@ -84,12 +103,20 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
 
     function onDocumentLoadError(error: Error) {
         console.error('PDF Viewer Error:', error);
+
+        // If it failed and we haven't retried with CDN worker yet, try that
+        if (loadAttempts === 0 && (error.message.includes('Worker') || error.message.includes('setting up'))) {
+            console.warn('Local worker failed, retrying with CDN worker...');
+            pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+            setLoadAttempts(1);
+            return;
+        }
+
         setIsLoading(false);
-        // More descriptive error for users
         if (error.message.includes('Worker')) {
-            setLoadError('Educational engine initialization failed. Please refresh.');
+            setLoadError('Educational engine initialization failed. Please check your internet connection and try again.');
         } else {
-            setLoadError('Unable to render clinical document. The file might be corrupted or too large.');
+            setLoadError('Unable to render clinical document. The file might be corrupted or too large for this device.');
         }
     }
 
@@ -126,10 +153,12 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
         return () => window.removeEventListener('keydown', handleKeyPress);
     }, [pageNumber, numPages, onClose]);
 
-    // Set worker source to local legacy file for maximum reliability and no CORS issues
+    // Ensure worker source is set on mount
     useEffect(() => {
-        pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
-    }, []);
+        if (loadAttempts === 0) {
+            pdfjs.GlobalWorkerOptions.workerSrc = getWorkerSrc();
+        }
+    }, [loadAttempts]);
 
     const options = useMemo(() => ({
         cMapUrl: '/cmaps/',
@@ -140,6 +169,7 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
         // iOS Fixes: Disable range requests and streaming to prevent hangs on some Safari versions
         disableRange: true,
         disableStream: true,
+        disableAutoFetch: true, // Prevent background fetching too many pages at once
     }), []);
 
     return (
