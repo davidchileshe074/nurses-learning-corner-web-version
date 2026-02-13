@@ -447,12 +447,18 @@ function PDFViewerContent({
                             <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Initializing Reader Engine...</p>
                         </div>
                     ) : (useSimpleMode && resolvedUrl) ? (
-                        <div className="flex-1 w-full bg-slate-900 flex flex-col items-center">
+                        <div className="flex-1 w-full bg-slate-900 relative overflow-hidden flex flex-col items-center">
+                            {/* Safari/iOS Fix: Using key={pageNumber} forces iframe to reload and jump to correct page */}
                             <iframe
-                                src={`${resolvedUrl}#page=${pageNumber}&toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
-                                className="w-full h-full border-none"
+                                key={`${resolvedUrl}-${pageNumber}`}
+                                src={`${resolvedUrl}#page=${pageNumber}&view=FitH`}
+                                className="w-full h-full border-none absolute inset-0"
                                 title="Safe PDF Viewer"
-                                style={{ display: 'block' }}
+                                style={{
+                                    display: 'block',
+                                    height: '100%',
+                                    width: '100%'
+                                }}
                             />
                         </div>
                     ) : (
