@@ -1,5 +1,6 @@
 'use client';
 
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -8,17 +9,35 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { noteServices } from '@/services/notes';
 import { NoteEditor } from './NoteEditor';
 
+// Define Error Boundary Component
+class PDRErrorBoundary extends Component<{ children: ReactNode; fallback: ReactNode }, { hasError: boolean }> {
+    constructor(props: any) {
+        super(props);
+        this.state = { hasError: false };
+    }
+
+    static getDerivedStateFromError(_: Error) {
+        return { hasError: true };
+    }
+
+    componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+        console.error("PDFViewer Crashed:", error, errorInfo);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return this.props.fallback;
+        }
+        return this.props.children;
+    }
+}
+
 // Set worker for react-pdf using modern mjs file with absolute path for Capacitor stability
 // We use a fallback to CDN if the local worker fails to load
 const getWorkerSrc = () => {
-    if (typeof window === 'undefined') return '/pdf.worker.min.mjs';
-
-    // In Capacitor, we want to use the absolute URL to the local file
-    const localWorker = `${window.location.origin}/pdf.worker.min.mjs`;
-    return localWorker;
+    if (typeof window === 'undefined') return null;
+    return `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 };
-
-pdfjs.GlobalWorkerOptions.workerSrc = getWorkerSrc();
 
 interface PDFViewerProps {
     url: string | Blob;
@@ -28,7 +47,41 @@ interface PDFViewerProps {
     onClose: () => void;
 }
 
-export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: PDFViewerProps) {
+export function PDFViewer(props: PDFViewerProps) {
+    return (
+        <PDRErrorBoundary fallback={
+            <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
+                <div className="w-20 h-20 bg-red-900/20 rounded-full flex items-center justify-center mb-6">
+                    <svg className="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                </div>
+                <h3 className="text-white font-bold text-lg mb-2">Viewer Error</h3>
+                <p className="text-slate-400 text-sm max-w-xs mx-auto mb-6">
+                    The document viewer encountered an unexpected issue on your device.
+                </p>
+                <div className="flex gap-3">
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="px-6 py-3 bg-[#2B669A] text-white rounded-xl font-bold text-xs uppercase tracking-wide hover:bg-[#234f7a] transition-all"
+                    >
+                        Reload App
+                    </button>
+                    <button
+                        onClick={props.onClose}
+                        className="px-6 py-3 bg-slate-800 text-white rounded-xl font-bold text-xs uppercase tracking-wide hover:bg-slate-700 transition-all"
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+        }>
+            <PDFViewerContent {...props} />
+        </PDRErrorBoundary>
+    );
+}
+
+function PDFViewerContent({ url, userId, contentId, initialPage = 1, onClose }: PDFViewerProps) {
     const [numPages, setNumPages] = useState<number>(0);
     const [pageNumber, setPageNumber] = useState(initialPage);
     const [scale, setScale] = useState(1.0);
@@ -123,7 +176,8 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
     // Ensure worker source is set on mount
     useEffect(() => {
         if (loadAttempts === 0) {
-            pdfjs.GlobalWorkerOptions.workerSrc = getWorkerSrc();
+            const src = getWorkerSrc();
+            if (src) pdfjs.GlobalWorkerOptions.workerSrc = src;
         }
     }, [loadAttempts]);
 
