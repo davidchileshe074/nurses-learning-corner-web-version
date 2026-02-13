@@ -43,7 +43,9 @@ export default function DownloadsPage() {
     };
 
     const handleOpenContent = (item: CachedContent) => {
-        const url = URL.createObjectURL(item.blob);
+        // Re-wrap blob to ensure MIME type is application/pdf for iOS compatibility
+        const pdfBlob = new Blob([item.blob], { type: 'application/pdf' });
+        const url = URL.createObjectURL(pdfBlob);
         setViewingItem({ url, item });
     };
 

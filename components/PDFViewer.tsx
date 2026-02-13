@@ -8,15 +8,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { noteServices } from '@/services/notes';
 import { NoteEditor } from './NoteEditor';
 
-// Set worker for react-pdf using a more robust URL resolution
+// Set worker for react-pdf using a more robust URL resolution for iOS compatibility
+// Using the legacy build as it is more compatible with older Safari versions and Mobile WebViews
 const PDFJS_VERSION = pdfjs.version;
-pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${PDFJS_VERSION}/build/pdf.worker.min.mjs`;
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${PDFJS_VERSION}/legacy/build/pdf.worker.min.js`;
 
 interface PDFViewerProps {
     url: string;
     userId: string;
     contentId: string;
-    initialPage?: number;            
+    initialPage?: number;
     onClose: () => void;
 }
 
@@ -91,7 +92,10 @@ export function PDFViewer({ url, userId, contentId, initialPage = 1, onClose }: 
         standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${PDFJS_VERSION}/standard_fonts/`,
         enableXfa: false,
         isEvalSupported: false,
-    }), []);
+        // iOS Fixes: Disable range requests and streaming to prevent hangs on some Safari versions
+        disableRange: true,
+        disableStream: true,
+    }), [PDFJS_VERSION]);
 
     return (
         <div

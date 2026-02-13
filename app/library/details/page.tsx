@@ -108,9 +108,10 @@ function ContentDetailsContent() {
             // 1. Get download URL
             const fileUrl = storage.getFileDownload(config.bucketId, fileId);
 
-            // 2. Fetch file as blob
+            // 2. Fetch file as blob and ensure correct MIME type for iOS/Safari
             const response = await fetch(fileUrl.toString());
-            const fileBlob = await response.blob();
+            const rawBlob = await response.blob();
+            const fileBlob = new Blob([rawBlob], { type: 'application/pdf' });
 
             // 3. Save to Dexie
             await db.cachedContent.put({
@@ -163,7 +164,9 @@ function ContentDetailsContent() {
         let url = '';
 
         if (cached && cached.blob instanceof Blob) {
-            url = URL.createObjectURL(cached.blob);
+            // Re-wrap blob to ensure MIME type is application/pdf (needed for iOS Safari)
+            const pdfBlob = new Blob([cached.blob], { type: 'application/pdf' });
+            url = URL.createObjectURL(pdfBlob);
         } else if (fileId) {
             url = storage.getFileView(config.bucketId, fileId).toString();
         } else if (content.url) {
