@@ -231,17 +231,19 @@ export function PDFViewer({ url, onClose, userId, contentId, initialPage }: PDFV
 
       {/* PDF Area */}
       <div
-        className="flex-1 w-full relative bg-slate-900/95 overflow-hidden"
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
+        className={`flex-1 w-full relative bg-slate-900/95 ${isIOS ? 'overflow-y-auto' : 'overflow-hidden'}`}
+        style={isIOS ? { WebkitOverflowScrolling: 'touch' } : undefined}
+        onTouchStart={!isIOS ? onTouchStart : undefined}
+        onTouchMove={!isIOS ? onTouchMove : undefined}
+        onTouchEnd={!isIOS ? onTouchEnd : undefined}
       >
         {/* iOS Native Viewer */}
         {isIOS && resolvedUrl ? (
           <iframe
             src={resolvedUrl}
-            className="w-full h-full border-none bg-white"
+            className="w-full min-h-full border-none bg-white"
             title="PDF Viewer"
+            scrolling="no"
           />
         ) : (
           /* Android / Desktop React-PDF Viewer */
