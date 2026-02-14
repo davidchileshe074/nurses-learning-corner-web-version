@@ -26,10 +26,13 @@ export function PDFViewer({ url, onClose, userId, contentId, initialPage }: PDFV
   const [error, setError] = useState<string | null>(null);
 
   // Mobile + iOS detection
-  const isMobile = useMemo(() => {
-    if (typeof window === 'undefined') return false;
-    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
-    return isIOS || window.innerWidth < 640;
+  const { isMobile, isIOS } = useMemo(() => {
+    if (typeof window === 'undefined') return { isMobile: false, isIOS: false };
+    const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    return {
+      isMobile: ios || window.innerWidth < 640,
+      isIOS: ios
+    };
   }, []);
 
   useEffect(() => {
@@ -141,6 +144,30 @@ export function PDFViewer({ url, onClose, userId, contentId, initialPage }: PDFV
     }
   };
 
+  // Internal Error Boundary to catch PDF rendering crashes (common, especially on iOS)
+  class PDFErrorBoundary extends React.Component<{ children: React.ReactNode, onError: (error: Error) => void }, { hasError: boolean }> {
+    constructor(props: { children: React.ReactNode, onError: (error: Error) => void }) {
+      super(props);
+      this.state = { hasError: false };
+    }
+
+    static getDerivedStateFromError(_: Error) {
+      return { hasError: true };
+    }
+
+    componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+      console.error("PDF Render Crash:", error, errorInfo);
+      this.props.onError(error);
+    }
+
+    render() {
+      if (this.state.hasError) {
+        return null; // The parent component will show the error UI via the onError callback
+      }
+      return this.props.children;
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col">
       {/* Top Bar */}
@@ -152,51 +179,54 @@ export function PDFViewer({ url, onClose, userId, contentId, initialPage }: PDFV
           ✕
         </button>
 
-        <div className="flex items-center gap-3">
-          {isMobile && numPages > 0 && (
-            <div className="flex items-center bg-slate-800 rounded-lg px-2 py-1 gap-2">
+        {/* Only show controls if NOT on iOS (Native viewer has its own controls) */}
+        {!isIOS && (
+          <div className="flex items-center gap-3">
+            {isMobile && numPages > 0 && (
+              <div className="flex items-center bg-slate-800 rounded-lg px-2 py-1 gap-2">
+                <button
+                  onClick={() => setPageNumber(p => Math.max(1, p - 1))}
+                  className="text-white hover:text-blue-400 disabled:opacity-30 p-1"
+                  disabled={pageNumber <= 1}
+                >
+                  ◀
+                </button>
+
+                <span className="text-xs text-white font-mono font-bold min-w-[3rem] text-center">
+                  {pageNumber} / {numPages}
+                </span>
+
+                <button
+                  onClick={() => setPageNumber(p => Math.min(numPages, p + 1))}
+                  className="text-white hover:text-blue-400 disabled:opacity-30 p-1"
+                  disabled={pageNumber >= numPages}
+                >
+                  ▶
+                </button>
+              </div>
+            )}
+
+            <div className="flex items-center bg-slate-800 rounded-lg overflow-hidden">
               <button
-                onClick={() => setPageNumber(p => Math.max(1, p - 1))}
-                className="text-white hover:text-blue-400 disabled:opacity-30 p-1"
-                disabled={pageNumber <= 1}
+                onClick={() => setScale(s => Math.max(0.5, s - 0.1))}
+                className="px-3 py-1.5 text-white hover:bg-slate-700 active:bg-slate-600 transition-colors"
               >
-                ◀
+                −
               </button>
-
-              <span className="text-xs text-white font-mono font-bold min-w-[3rem] text-center">
-                {pageNumber} / {numPages}
+              <div className="bg-slate-950/30 h-full w-[1px]"></div>
+              <span className="px-2 text-xs text-white font-mono min-w-[3.5ch] text-center">
+                {Math.round(scale * 100)}%
               </span>
-
+              <div className="bg-slate-950/30 h-full w-[1px]"></div>
               <button
-                onClick={() => setPageNumber(p => Math.min(numPages, p + 1))}
-                className="text-white hover:text-blue-400 disabled:opacity-30 p-1"
-                disabled={pageNumber >= numPages}
+                onClick={() => setScale(s => Math.min(3, s + 0.1))}
+                className="px-3 py-1.5 text-white hover:bg-slate-700 active:bg-slate-600 transition-colors"
               >
-                ▶
+                +
               </button>
             </div>
-          )}
-
-          <div className="flex items-center bg-slate-800 rounded-lg overflow-hidden">
-            <button
-              onClick={() => setScale(s => Math.max(0.5, s - 0.1))}
-              className="px-3 py-1.5 text-white hover:bg-slate-700 active:bg-slate-600 transition-colors"
-            >
-              −
-            </button>
-            <div className="bg-slate-950/30 h-full w-[1px]"></div>
-            <span className="px-2 text-xs text-white font-mono min-w-[3.5ch] text-center">
-              {Math.round(scale * 100)}%
-            </span>
-            <div className="bg-slate-950/30 h-full w-[1px]"></div>
-            <button
-              onClick={() => setScale(s => Math.min(3, s + 0.1))}
-              className="px-3 py-1.5 text-white hover:bg-slate-700 active:bg-slate-600 transition-colors"
-            >
-              +
-            </button>
           </div>
-        </div>
+        )}
       </div>
 
       {/* PDF Area */}
@@ -206,65 +236,82 @@ export function PDFViewer({ url, onClose, userId, contentId, initialPage }: PDFV
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
-        <div className="absolute inset-0 overflow-auto flex flex-col items-center py-8 px-4">
-          {error ? (
-            <div className="my-auto flex flex-col items-center justify-center bg-slate-900 p-8 rounded-2xl border border-white/10 max-w-sm text-center shadow-xl">
-              <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-4 text-red-500 text-2xl">
-                ⚠️
-              </div>
-              <h3 className="text-white font-bold text-lg mb-2">Unable to load document</h3>
-              <p className="text-sm text-slate-400 mb-6">{error}</p>
-              <button
-                onClick={() => onClose()}
-                className="px-6 py-2.5 bg-white text-slate-900 rounded-xl font-bold text-sm hover:bg-slate-100 transition-colors"
-              >
-                Close Viewer
-              </button>
-            </div>
-          ) : (
-            <>
-              {isLoading && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-slate-900/80 backdrop-blur-sm">
-                  <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
-                  <p className="text-slate-400 text-xs font-bold uppercase tracking-widest animate-pulse">Loading Document...</p>
+        {/* iOS Native Viewer */}
+        {isIOS && resolvedUrl ? (
+          <iframe
+            src={resolvedUrl}
+            className="w-full h-full border-none bg-white"
+            title="PDF Viewer"
+          />
+        ) : (
+          /* Android / Desktop React-PDF Viewer */
+          <div className="absolute inset-0 overflow-auto flex flex-col items-center py-8 px-4">
+            {error ? (
+              <div className="my-auto flex flex-col items-center justify-center bg-slate-900 p-8 rounded-2xl border border-white/10 max-w-sm text-center shadow-xl">
+                <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-4 text-red-500 text-2xl">
+                  ⚠️
                 </div>
-              )}
-
-              {resolvedUrl && (
-                <Document
-                  file={resolvedUrl}
-                  onLoadSuccess={onLoadSuccess}
-                  onLoadError={onLoadError}
-                  loading={null}
-                  className="flex flex-col items-center"
-                  error={null}
+                <h3 className="text-white font-bold text-lg mb-2">Unable to load document</h3>
+                <p className="text-sm text-slate-400 mb-6">{error}</p>
+                {isIOS && (
+                  <p className="text-xs text-slate-500 mb-4 bg-slate-800 p-2 rounded">
+                    Tip: If this document fails to load, it might be password protected or corrupted.
+                  </p>
+                )}
+                <button
+                  onClick={() => onClose()}
+                  className="px-6 py-2.5 bg-white text-slate-900 rounded-xl font-bold text-sm hover:bg-slate-100 transition-colors"
                 >
-                  {isMobile ? (
-                    <Page
-                      pageNumber={pageNumber}
-                      scale={scale}
-                      renderTextLayer={false}
-                      renderAnnotationLayer={false}
-                      className="shadow-2xl rounded-sm overflow-hidden bg-white"
-                      width={window.innerWidth * 0.92} // Use explicit width for mobile responsiveness
-                    />
-                  ) : (
-                    Array.from(new Array(numPages), (_, index) => (
-                      <Page
-                        key={index}
-                        pageNumber={index + 1}
-                        scale={scale}
-                        renderTextLayer={true}
-                        renderAnnotationLayer={true}
-                        className="shadow-2xl mb-8 rounded-sm overflow-hidden bg-white"
-                      />
-                    ))
-                  )}
-                </Document>
-              )}
-            </>
-          )}
-        </div>
+                  Close Viewer
+                </button>
+              </div>
+            ) : (
+              <>
+                {isLoading && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-slate-900/80 backdrop-blur-sm">
+                    <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest animate-pulse">Loading Document...</p>
+                  </div>
+                )}
+
+                {resolvedUrl && (
+                  <PDFErrorBoundary onError={(err) => setError(err.message || 'Rendering failed')}>
+                    <Document
+                      file={resolvedUrl}
+                      onLoadSuccess={onLoadSuccess}
+                      onLoadError={onLoadError}
+                      loading={null}
+                      className="flex flex-col items-center"
+                      error={null}
+                    >
+                      {isMobile ? (
+                        <Page
+                          pageNumber={pageNumber}
+                          scale={scale}
+                          renderTextLayer={false}
+                          renderAnnotationLayer={false} // Disable annotation layer on mobile to save memory
+                          className="shadow-2xl rounded-sm overflow-hidden bg-white"
+                          width={window.innerWidth * 0.92}
+                        />
+                      ) : (
+                        Array.from(new Array(numPages), (_, index) => (
+                          <Page
+                            key={index}
+                            pageNumber={index + 1}
+                            scale={scale}
+                            renderTextLayer={true}
+                            renderAnnotationLayer={true}
+                            className="shadow-2xl mb-8 rounded-sm overflow-hidden bg-white"
+                          />
+                        ))
+                      )}
+                    </Document>
+                  </PDFErrorBoundary>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
