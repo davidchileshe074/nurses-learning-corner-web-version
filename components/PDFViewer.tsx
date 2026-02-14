@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
+import { downloadServices } from '@/services/download';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
@@ -11,12 +12,15 @@ pdfjs.GlobalWorkerOptions.workerSrc =
 interface PDFViewerProps {
   url: string | Blob;
   onClose: () => void;
+  userId?: string;
+  contentId?: string;
+  initialPage?: number;
 }
 
-export function PDFViewer({ url, onClose }: PDFViewerProps) {
+export function PDFViewer({ url, onClose, userId, contentId, initialPage }: PDFViewerProps) {
   const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
   const [numPages, setNumPages] = useState(0);
-  const [pageNumber, setPageNumber] = useState(1);
+  const [pageNumber, setPageNumber] = useState(initialPage || 1);
   const [scale, setScale] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -36,6 +40,12 @@ export function PDFViewer({ url, onClose }: PDFViewerProps) {
       setResolvedUrl(url);
     }
   }, [url]);
+
+  useEffect(() => {
+    if (contentId && pageNumber > 0) {
+      downloadServices.saveReadingProgress(contentId, pageNumber);
+    }
+  }, [contentId, pageNumber]);
 
   const onLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
