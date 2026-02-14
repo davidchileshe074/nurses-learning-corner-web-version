@@ -239,12 +239,18 @@ export function PDFViewer({ url, onClose, userId, contentId, initialPage }: PDFV
       >
         {/* iOS Native Viewer */}
         {isIOS && resolvedUrl ? (
-          <iframe
-            src={resolvedUrl}
-            className="w-full min-h-full border-none bg-white"
-            title="PDF Viewer"
-            scrolling="no"
-          />
+          <object
+            data={resolvedUrl}
+            type="application/pdf"
+            className="w-full h-full block"
+          >
+            {/* Fallback for very old iOS or edge cases */}
+            <iframe
+              src={resolvedUrl}
+              className="w-full h-full border-none"
+              title="PDF Viewer"
+            />
+          </object>
         ) : (
           /* Android / Desktop React-PDF Viewer */
           <div className="absolute inset-0 overflow-auto flex flex-col items-center py-8 px-4">
