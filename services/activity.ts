@@ -63,7 +63,8 @@ export const activityServices = {
             );
         } catch (error: any) {
             if (error.code === 404) {
-                console.warn('Recent activity collection not found, skipping log.');
+                // Collection doesn't exist yet - silently skip logging
+                // console.warn('Recent activity collection not found, skipping log.');
                 return;
             }
             console.error('Error logging activity:', error);
