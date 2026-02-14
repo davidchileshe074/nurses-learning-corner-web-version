@@ -239,18 +239,25 @@ export function PDFViewer({ url, onClose, userId, contentId, initialPage }: PDFV
       >
         {/* iOS Native Viewer */}
         {isIOS && resolvedUrl ? (
-          <object
-            data={resolvedUrl}
-            type="application/pdf"
-            className="w-full h-full block"
-          >
-            {/* Fallback for very old iOS or edge cases */}
-            <iframe
-              src={resolvedUrl}
-              className="w-full h-full border-none"
-              title="PDF Viewer"
-            />
-          </object>
+          <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+            <div className="bg-slate-800 p-4 rounded-full mb-6">
+              <span className="text-4xl">📄</span>
+            </div>
+            <h3 className="text-white text-lg font-semibold mb-2">View Document</h3>
+            <p className="text-slate-400 text-sm mb-8 max-w-xs mx-auto">
+              This document is optimized for the native iOS viewer.
+            </p>
+            <button
+              onClick={() => window.open(resolvedUrl, '_blank')}
+              className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-blue-900/20 active:scale-95 transition-all flex items-center gap-2"
+            >
+              Open in Native Viewer
+              <span>↗</span>
+            </button>
+            <p className="text-slate-600 text-xs mt-8">
+              Tap to open the PDF file
+            </p>
+          </div>
         ) : (
           /* Android / Desktop React-PDF Viewer */
           <div className="absolute inset-0 overflow-auto flex flex-col items-center py-8 px-4">
