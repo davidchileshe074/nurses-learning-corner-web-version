@@ -6,8 +6,9 @@ import { downloadServices } from '@/services/download';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
-// Use legacy worker for better iOS/Safari compatibility
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.js`;
+// Use modern worker for v5+ compatibility
+// Use local worker for better reliability and version consistency
+pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
 interface PDFViewerProps {
   url: string | Blob;
