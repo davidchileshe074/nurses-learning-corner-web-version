@@ -304,7 +304,6 @@ export function PDFViewer({ url, onClose, userId, contentId, initialPage }: PDFV
                         scale={scale}
                         renderTextLayer={false}
                         renderAnnotationLayer={false}
-                        renderMode={isIOS ? 'svg' : 'canvas'} // SVG often helps on iOS
                         className="shadow-2xl rounded-sm overflow-hidden bg-white touch-pan-y"
                         width={safePageWidth}
                       />
