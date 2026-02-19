@@ -41,7 +41,7 @@ export function PDFViewer({ url, onClose, userId, contentId, initialPage }: PDFV
         setError('Failed to initialize PDF engine');
       }
     }
-    
+
     // Safety timeout: if still loading after 15s, show an error
     const timer = setTimeout(() => {
       if (isLoading && !error) {
@@ -54,10 +54,18 @@ export function PDFViewer({ url, onClose, userId, contentId, initialPage }: PDFV
     return () => clearTimeout(timer);
   }, [isLoading, error]);
 
-  // Mobile + iOS detection
+  // Mobile + iOS detection (Improved for modern iPadOS & iOS 18+)
   const { isMobile, isIOS } = useMemo(() => {
     if (typeof window === 'undefined') return { isMobile: false, isIOS: false };
-    const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+
+    // Check for standard iPhone/iPad/iPod
+    const isStandardIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+
+    // Modern iPadOS (iOS 13+) often reports as "Macintosh" but has touch points
+    const isModerniPad = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+
+    const ios = isStandardIOS || isModerniPad;
+
     return {
       isMobile: ios || window.innerWidth < 640,
       isIOS: ios
