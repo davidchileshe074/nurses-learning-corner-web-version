@@ -7,8 +7,8 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
 // Use modern worker for v5+ compatibility
-// Use local worker for better reliability and version consistency
-pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+// Use local worker for better reliability and Safari compatibility
+pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
 
 interface PDFViewerProps {
   url: string | Blob;
