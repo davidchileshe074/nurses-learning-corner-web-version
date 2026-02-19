@@ -277,25 +277,27 @@ export function PDFViewer({ url, onClose, userId, contentId, initialPage }: PDFV
             </div>
           )}
 
-          <div className="flex items-center bg-slate-800 rounded-lg overflow-hidden">
-            <button
-              onClick={() => setScale((s) => Math.max(0.5, s - 0.1))}
-              className="px-3 py-1.5 text-white hover:bg-slate-700 active:bg-slate-600 transition-colors"
-            >
-              −
-            </button>
-            <div className="bg-slate-950/30 h-full w-[1px]"></div>
-            <span className="px-2 text-xs text-white font-mono min-w-[3.5ch] text-center">
-              {Math.round(scale * 100)}%
-            </span>
-            <div className="bg-slate-950/30 h-full w-[1px]"></div>
-            <button
-              onClick={() => setScale((s) => Math.min(3, s + 0.1))}
-              className="px-3 py-1.5 text-white hover:bg-slate-700 active:bg-slate-600 transition-colors"
-            >
-              +
-            </button>
-          </div>
+          {!useNativeViewer && (
+            <div className="flex items-center bg-slate-800 rounded-lg overflow-hidden">
+              <button
+                onClick={() => setScale((s) => Math.max(0.5, s - 0.1))}
+                className="px-3 py-1.5 text-white hover:bg-slate-700 active:bg-slate-600 transition-colors"
+              >
+                −
+              </button>
+              <div className="bg-slate-950/30 h-full w-[1px]"></div>
+              <span className="px-2 text-xs text-white font-mono min-w-[3.5ch] text-center">
+                {Math.round(scale * 100)}%
+              </span>
+              <div className="bg-slate-950/30 h-full w-[1px]"></div>
+              <button
+                onClick={() => setScale((s) => Math.min(3, s + 0.1))}
+                className="px-3 py-1.5 text-white hover:bg-slate-700 active:bg-slate-600 transition-colors"
+              >
+                +
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -358,16 +360,29 @@ export function PDFViewer({ url, onClose, userId, contentId, initialPage }: PDFV
               )}
 
               {useNativeViewer && resolvedUrl ? (
-                <div className="w-full h-full flex flex-col items-center">
+                <div className="absolute inset-0 flex flex-col items-center bg-slate-950">
                   <iframe
-                    src={`${resolvedUrl}#toolbar=0&navpanes=0&scrollbar=0`}
-                    className="w-full flex-1 border-0 bg-white shadow-2xl"
+                    src={`${resolvedUrl}#view=FitW&toolbar=0&navpanes=0&scrollbar=0`}
+                    className="w-full flex-1 border-0 bg-white"
                     title="Native PDF Viewer"
+                    style={{ height: 'calc(100% - 60px)' }}
                   />
-                  <div className="mt-4 p-4 bg-blue-500/10 rounded-xl border border-blue-500/20 max-w-xs text-center">
-                    <p className="text-xs text-blue-400">
-                      Using native iOS viewer for better compatibility (controls hidden).
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[90%] p-3 bg-slate-900/90 backdrop-blur-md rounded-xl border border-white/10 shadow-2xl text-center z-10">
+                    <p className="text-[10px] text-slate-400 mb-1">
+                      {error ? `Rendering Error: ${error}` : 'Native iOS Viewer Active'}
                     </p>
+                    <button
+                      onClick={() => {
+                        setUseNativeViewer(false);
+                        setError(null);
+                        setIsLoading(true);
+                        setWorkerReady(false);
+                        setTimeout(() => setWorkerReady(true), 100);
+                      }}
+                      className="text-[10px] text-blue-400 font-bold hover:underline"
+                    >
+                      Retry Standard Viewer
+                    </button>
                   </div>
                 </div>
               ) : (
