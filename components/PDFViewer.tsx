@@ -55,17 +55,21 @@ export function PDFViewer({ url, onClose, userId, contentId, initialPage }: PDFV
       }
     }
 
-    // Safety timeout: if still loading after 15s, show an error
+    // Safety timeout: if still loading after 10s on iOS, suggest native viewer
     const timer = setTimeout(() => {
-      if (isLoading && !error) {
-        console.warn('PDF load timed out');
-        setError('Loading timed out. Please check your connection or try again.');
+      if (isLoading && !error && !useNativeViewer) {
+        console.warn('PDF load timed out - suggesting native fallback');
+        if (isIOS) {
+          setError('The document is taking a long time to load. Older devices or versions work best with the native viewer.');
+        } else {
+          setError('Loading timed out. Please check your connection or try again.');
+        }
         setIsLoading(false);
       }
-    }, 15000);
+    }, 10000);
 
     return () => clearTimeout(timer);
-  }, [isLoading, error]);
+  }, [isLoading, error, isIOS, useNativeViewer]);
 
   // Mobile + iOS detection (Improved for modern iPadOS & iOS 18+)
   const { isMobile, isIOS } = useMemo(() => {
