@@ -8,7 +8,10 @@ import 'react-pdf/dist/Page/TextLayer.css';
 
 // Use modern worker for v5+ compatibility
 // Use local worker for better reliability and Safari compatibility
-pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+// We set this here but will also ensure it's set in the component
+if (typeof window !== 'undefined' && 'Worker' in window) {
+  pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+}
 
 interface PDFViewerProps {
   url: string | Blob;
@@ -25,6 +28,31 @@ export function PDFViewer({ url, onClose, userId, contentId, initialPage }: PDFV
   const [scale, setScale] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [workerReady, setWorkerReady] = useState(false);
+
+  // Set up worker on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+        setWorkerReady(true);
+      } catch (err) {
+        console.error('Worker init failed:', err);
+        setError('Failed to initialize PDF engine');
+      }
+    }
+    
+    // Safety timeout: if still loading after 15s, show an error
+    const timer = setTimeout(() => {
+      if (isLoading && !error) {
+        console.warn('PDF load timed out');
+        setError('Loading timed out. Please check your connection or try again.');
+        setIsLoading(false);
+      }
+    }, 15000);
+
+    return () => clearTimeout(timer);
+  }, [isLoading, error]);
 
   // Mobile + iOS detection
   const { isMobile, isIOS } = useMemo(() => {
@@ -289,7 +317,7 @@ export function PDFViewer({ url, onClose, userId, contentId, initialPage }: PDFV
                 </div>
               )}
 
-              {resolvedUrl && safePageWidth !== undefined && (
+              {resolvedUrl && workerReady && safePageWidth !== undefined && (
                 <PDFErrorBoundary onError={(err) => setError(err.message || 'Rendering failed')}>
                   <Document
                     file={resolvedUrl}
