@@ -43,37 +43,9 @@ export function PDFViewer({ url, onClose, userId, contentId, initialPage }: PDFV
   const [workerReady, setWorkerReady] = useState(false);
   const [useNativeViewer, setUseNativeViewer] = useState(false);
 
-  // Set up worker on mount
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
-        setWorkerReady(true);
-      } catch (err) {
-        console.error('Worker init failed:', err);
-        setError('Failed to initialize PDF engine');
-      }
-    }
-
-    // Safety timeout: if still loading after 10s on iOS, suggest native viewer
-    const timer = setTimeout(() => {
-      if (isLoading && !error && !useNativeViewer) {
-        console.warn('PDF load timed out - suggesting native fallback');
-        if (isIOS) {
-          setError('The document is taking a long time to load. Older devices or versions work best with the native viewer.');
-        } else {
-          setError('Loading timed out. Please check your connection or try again.');
-        }
-        setIsLoading(false);
-      }
-    }, 10000);
-
-    return () => clearTimeout(timer);
-  }, [isLoading, error, isIOS, useNativeViewer]);
-
   // Mobile + iOS detection (Improved for modern iPadOS & iOS 18+)
-  const { isMobile, isIOS } = useMemo(() => {
-    if (typeof window === 'undefined') return { isMobile: false, isIOS: false };
+  const { isMobile, isIOS, iosVersion } = useMemo(() => {
+    if (typeof window === 'undefined') return { isMobile: false, isIOS: false, iosVersion: 0 };
 
     // Check for standard iPhone/iPad/iPod
     const isStandardIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
@@ -83,11 +55,60 @@ export function PDFViewer({ url, onClose, userId, contentId, initialPage }: PDFV
 
     const ios = isStandardIOS || isModerniPad;
 
+    // Detect version
+    let version = 0;
+    if (ios) {
+      const match = navigator.userAgent.match(/OS (\d+)_(\d+)/);
+      if (match) {
+        version = parseInt(match[1], 10) + parseInt(match[2], 10) / 100;
+      } else if (isModerniPad) {
+        // iPadOS 13+ is common for these
+        version = 15;
+      }
+    }
+
     return {
       isMobile: ios || window.innerWidth < 640,
-      isIOS: ios
+      isIOS: ios,
+      iosVersion: version
     };
   }, []);
+
+  // Set up worker on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+
+        // Version guard: If iOS < 17.4, the modern worker is likely to crash
+        // We let it try once, but set a shorter aggressive timeout
+        if (isIOS && iosVersion < 17.04) {
+          console.warn(`Old iOS version detected (${iosVersion}), modern PDF engine may be unstable.`);
+        }
+
+        setWorkerReady(true);
+      } catch (err) {
+        console.error('Worker init failed:', err);
+        setError('Failed to initialize PDF engine');
+      }
+    }
+
+    // Safety timeout: if still loading after 7s on older iOS, suggest native viewer
+    const timeoutDuration = (isIOS && iosVersion < 17.04) ? 7000 : 12000;
+
+    const timer = setTimeout(() => {
+      if (isLoading && !error && !useNativeViewer) {
+        if (isIOS) {
+          setError(`Optimal performance is limited on this system version (${iosVersion}). The native viewer is recommended.`);
+        } else {
+          setError('Loading timed out. Please check your connection.');
+        }
+        setIsLoading(false);
+      }
+    }, timeoutDuration);
+
+    return () => clearTimeout(timer);
+  }, [isLoading, error, isIOS, iosVersion, useNativeViewer]);
 
   // Dynamic safe page width to avoid iOS canvas pixel limit (~16.7M pixels)
   const containerRef = useRef<HTMLDivElement>(null);
@@ -197,28 +218,7 @@ export function PDFViewer({ url, onClose, userId, contentId, initialPage }: PDFV
     setIsLoading(false);
   };
 
-  // Swipe Logic
-  const touchStartX = useRef(0);
-  const touchEndX = useRef(0);
 
-  const onTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    touchEndX.current = e.touches[0].clientX;
-  };
-
-  const onTouchEnd = () => {
-    const delta = touchStartX.current - touchEndX.current;
-    const swipeThreshold = 50;
-
-    if (delta > swipeThreshold && pageNumber < numPages) {
-      setPageNumber(p => p + 1);
-    } else if (delta < -swipeThreshold && pageNumber > 1) {
-      setPageNumber(p => p - 1);
-    }
-  };
 
   // Error Boundary
   class PDFErrorBoundary extends React.Component<{ children: React.ReactNode, onError: (error: Error) => void }, { hasError: boolean }> {
@@ -256,27 +256,11 @@ export function PDFViewer({ url, onClose, userId, contentId, initialPage }: PDFV
         </button>
 
         <div className="flex items-center gap-3">
-          {isMobile && numPages > 0 && (
-            <div className="flex items-center bg-slate-800 rounded-lg px-2 py-1 gap-2">
-              <button
-                onClick={() => setPageNumber(p => Math.max(1, p - 1))}
-                className="text-white hover:text-blue-400 disabled:opacity-30 p-1"
-                disabled={pageNumber <= 1}
-              >
-                ◀
-              </button>
-
-              <span className="text-xs text-white font-mono font-bold min-w-[3rem] text-center">
-                {pageNumber} / {numPages}
+          {numPages > 0 && !isMobile && (
+            <div className="flex items-center bg-slate-800 rounded-lg px-3 py-1.5 h-full">
+              <span className="text-xs text-white font-mono font-bold">
+                {numPages} Pages
               </span>
-
-              <button
-                onClick={() => setPageNumber(p => Math.min(numPages, p + 1))}
-                className="text-white hover:text-blue-400 disabled:opacity-30 p-1"
-                disabled={pageNumber >= numPages}
-              >
-                ▶
-              </button>
             </div>
           )}
 
@@ -306,9 +290,6 @@ export function PDFViewer({ url, onClose, userId, contentId, initialPage }: PDFV
       <div
         className={`flex-1 w-full relative bg-slate-900/95 ${isIOS ? 'overflow-y-auto' : 'overflow-hidden'}`}
         style={isIOS ? { WebkitOverflowScrolling: 'touch' } : undefined}
-        onTouchStart={!isIOS ? onTouchStart : undefined}
-        onTouchMove={!isIOS ? onTouchMove : undefined}
-        onTouchEnd={!isIOS ? onTouchEnd : undefined}
       >
         <div
           className="absolute inset-0 overflow-auto flex flex-col items-center py-8 px-4 touch-pan-y overscroll-contain"
@@ -377,27 +358,17 @@ export function PDFViewer({ url, onClose, userId, contentId, initialPage }: PDFV
                     className="flex flex-col items-center"
                     error={null}
                   >
-                    {isMobile ? (
+                    {Array.from(new Array(numPages), (_, index) => (
                       <Page
-                        pageNumber={pageNumber}
+                        key={index}
+                        pageNumber={index + 1}
                         scale={scale}
-                        renderTextLayer={false}
-                        renderAnnotationLayer={false}
-                        className="shadow-2xl rounded-sm overflow-hidden bg-white touch-pan-y"
+                        renderTextLayer={!isMobile}
+                        renderAnnotationLayer={!isMobile}
+                        className="shadow-2xl mb-8 rounded-sm overflow-hidden bg-white touch-pan-y"
                         width={safePageWidth}
                       />
-                    ) : (
-                      Array.from(new Array(numPages), (_, index) => (
-                        <Page
-                          key={index}
-                          pageNumber={index + 1}
-                          scale={scale}
-                          renderTextLayer={true}
-                          renderAnnotationLayer={true}
-                          className="shadow-2xl mb-8 rounded-sm overflow-hidden bg-white"
-                        />
-                      ))
-                    )}
+                    ))}
                   </Document>
                 </PDFErrorBoundary>
               )}
