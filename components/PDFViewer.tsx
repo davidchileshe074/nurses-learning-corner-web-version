@@ -13,6 +13,18 @@ if (typeof window !== 'undefined' && 'Worker' in window) {
   pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
 }
 
+// Polyfill for Promise.withResolvers (Required for pdf.js v5+ on iOS < 17.4)
+if (typeof Promise.withResolvers === "undefined") {
+  (Promise as any).withResolvers = function () {
+    let resolve, reject;
+    const promise = new Promise((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
+    return { promise, resolve, reject };
+  };
+}
+
 interface PDFViewerProps {
   url: string | Blob;
   onClose: () => void;
@@ -29,6 +41,7 @@ export function PDFViewer({ url, onClose, userId, contentId, initialPage }: PDFV
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [workerReady, setWorkerReady] = useState(false);
+  const [useNativeViewer, setUseNativeViewer] = useState(false);
 
   // Set up worker on mount
   useEffect(() => {
@@ -304,17 +317,28 @@ export function PDFViewer({ url, onClose, userId, contentId, initialPage }: PDFV
               </div>
               <h3 className="text-white font-bold text-lg mb-2">Unable to load document</h3>
               <p className="text-sm text-slate-400 mb-6">{error}</p>
-              {isIOS && (
-                <p className="text-xs text-slate-500 mb-4 bg-slate-800 p-2 rounded">
-                  Tip: If this document fails to load, it might be password protected or corrupted.
-                </p>
-              )}
-              <button
-                onClick={() => onClose()}
-                className="px-6 py-2.5 bg-white text-slate-900 rounded-xl font-bold text-sm hover:bg-slate-100 transition-colors"
-              >
-                Close Viewer
-              </button>
+
+              <div className="flex flex-col gap-3 w-full">
+                {isIOS && !useNativeViewer && (
+                  <button
+                    onClick={() => {
+                      setUseNativeViewer(true);
+                      setError(null);
+                      setIsLoading(false);
+                    }}
+                    className="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-500 transition-colors"
+                  >
+                    Try Native iOS Viewer
+                  </button>
+                )}
+
+                <button
+                  onClick={() => onClose()}
+                  className="px-6 py-2.5 bg-white/10 text-white rounded-xl font-bold text-sm hover:bg-white/20 transition-colors"
+                >
+                  Close Viewer
+                </button>
+              </div>
             </div>
           ) : (
             <>
@@ -325,7 +349,21 @@ export function PDFViewer({ url, onClose, userId, contentId, initialPage }: PDFV
                 </div>
               )}
 
-              {resolvedUrl && workerReady && safePageWidth !== undefined && (
+              {useNativeViewer && resolvedUrl ? (
+                <div className="w-full h-full flex flex-col items-center">
+                  <iframe
+                    src={`${resolvedUrl}#toolbar=0`}
+                    className="w-full h-full border-0 bg-white shadow-2xl"
+                    title="Native PDF Viewer"
+                  />
+                  <div className="mt-4 p-4 bg-blue-500/10 rounded-xl border border-blue-500/20 max-w-xs text-center">
+                    <p className="text-xs text-blue-400">
+                      Using Native iOS Engine for compatibility.
+                      Standard controls are hidden.
+                    </p>
+                  </div>
+                </div>
+              ) : resolvedUrl && workerReady && safePageWidth !== undefined && (
                 <PDFErrorBoundary onError={(err) => setError(err.message || 'Rendering failed')}>
                   <Document
                     file={resolvedUrl}
