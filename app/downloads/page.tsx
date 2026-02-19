@@ -6,7 +6,7 @@ import { ContentCard } from '@/components/ContentCard';
 import { PDFViewer } from '@/components/PDFViewer';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    DownloadCloud,
+    CloudDownload,
     Trash2,
     Search,
     HardDrive,
@@ -133,7 +133,7 @@ export default function DownloadsPage() {
                 ) : (
                     <div className="flex flex-col items-center justify-center py-24 text-center bg-white rounded-lg border border-slate-200 border-dashed">
                         <div className="w-16 h-16 bg-slate-50 flex items-center justify-center rounded-full mb-4">
-                            <DownloadCloud className="text-slate-300" size={32} />
+                            <CloudDownload className="text-slate-300" size={32} />
                         </div>
                         <h3 className="text-lg font-bold text-slate-800">No Downloads</h3>
                         <p className="text-slate-500 text-sm mt-1 max-w-sm">

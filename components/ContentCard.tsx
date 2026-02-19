@@ -6,13 +6,14 @@ import { db } from '@/lib/db';
 import {
     FileText,
     Link as LinkIcon,
-    DownloadCloud,
-    CheckCircle2,
+    CloudDownload,
+    CircleCheck,
     MoreHorizontal,
     Sparkles,
     Zap,
     Download,
-    Check
+    Check,
+    CheckCircle2
 } from 'lucide-react';
 
 interface ContentCardProps {
@@ -77,7 +78,7 @@ export function ContentCard({ content, onPress, onDownload }: ContentCardProps) 
                         onClick={(e) => { e.stopPropagation(); onDownload?.(content); }}
                         className={`flex items-center gap-2 text-xs font-semibold transition-all ${isDownloaded ? 'text-emerald-600' : 'text-slate-400 hover:text-[#2B669A]'}`}
                     >
-                        {isDownloaded ? <CheckCircle2 size={16} /> : <DownloadCloud size={16} />}
+                        {isDownloaded ? <CircleCheck size={16} /> : <CloudDownload size={16} />}
                         <span>{isDownloaded ? 'Offline Ready' : 'Download'}</span>
                     </button>
 

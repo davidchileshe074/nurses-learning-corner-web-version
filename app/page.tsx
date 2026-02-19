@@ -25,7 +25,6 @@ import {
     ShieldCheck,
     Briefcase,
     Pill,
-    HeartPulse,
     Microscope,
     Brain,
     Hospital,
@@ -190,7 +189,7 @@ const getSubjectIcon = (subject: string): any => {
     if (s.includes('nurs')) return Briefcase;
     if (s.includes('care plan')) return Activity;
     if (s.includes('pharmacology')) return Pill;
-    if (s.includes('physio')) return HeartPulse;
+    if (s.includes('physio')) return Activity;
     if (s.includes('bio')) return Microscope;
     if (s.includes('psych')) return Brain;
     if (s.includes('medic')) return Hospital;

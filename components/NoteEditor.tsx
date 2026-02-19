@@ -13,7 +13,7 @@ import {
     Bold,
     Italic,
     Underline,
-    CheckCircle2,
+    CircleCheck,
     CloudIcon,
     AlertCircle,
     BookOpen
@@ -121,7 +121,7 @@ export function NoteEditor({ userId, contentId, initialContent = '', onSave }: N
                             </div>
                         ) : lastSaved ? (
                             <div className={`flex items-center gap-2 ${isOffline ? 'text-orange-500' : 'text-green-600'}`}>
-                                {isOffline ? <AlertCircle size={12} /> : <CheckCircle2 size={12} />}
+                                {isOffline ? <AlertCircle size={12} /> : <CircleCheck size={12} />}
                                 <div className="text-right leading-none">
                                     <span className="text-[9px] font-black uppercase tracking-widest block">{isOffline ? 'Local Save' : 'Cloud Sync'}</span>
                                     <span className="text-[8px] font-bold opacity-60 uppercase">{lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>

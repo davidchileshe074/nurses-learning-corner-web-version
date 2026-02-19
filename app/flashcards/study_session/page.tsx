@@ -13,7 +13,7 @@ import {
     Trophy,
     Flame,
     Play,
-    CheckCircle2,
+    CheckCircle2 as CircleCheck,
     XCircle,
     Timer,
     Shuffle
@@ -298,7 +298,7 @@ function FlashcardStudyContent() {
                             {/* Card Back */}
                             <div className={`absolute inset-0 backface-hidden bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[40px] flex flex-col items-center justify-center p-12 text-center transform rotate-y-180 border-4 border-white/20 shadow-2xl transition-opacity duration-300 ${isFlipped ? 'opacity-100' : 'opacity-0'}`}>
                                 <div className="absolute top-10 flex items-center gap-2 px-4 py-1.5 bg-white/20 rounded-full border border-white/20">
-                                    <CheckCircle2 size={12} className="text-white" />
+                                    <CircleCheck size={12} className="text-white" />
                                     <span className="text-[10px] font-black uppercase tracking-widest text-white">Verified Protocol</span>
                                 </div>
                                 <div className="custom-scrollbar overflow-y-auto max-h-[250px] w-full pr-2">

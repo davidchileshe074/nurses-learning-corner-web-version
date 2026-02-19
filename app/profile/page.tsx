@@ -22,7 +22,7 @@ import {
     Phone,
 
     Sparkles,
-    DownloadCloud
+    CloudDownload
 } from 'lucide-react';
 
 export default function ProfilePage() {
@@ -314,7 +314,7 @@ export default function ProfilePage() {
                                 className="w-full flex items-center justify-between p-4 hover:bg-blue-50 transition-colors group"
                             >
                                 <div className="flex items-center gap-3">
-                                    <DownloadCloud size={18} className="text-[#2B669A]" />
+                                    <CloudDownload size={18} className="text-[#2B669A]" />
                                     <div className="text-left">
                                         <span className="font-medium text-slate-700 text-sm block">Install Application</span>
                                     </div>
