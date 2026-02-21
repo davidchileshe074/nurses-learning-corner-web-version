@@ -11,16 +11,14 @@ if (typeof window !== 'undefined' && 'Worker' in window) {
   pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
 }
 
-// Polyfill for Promise.withResolvers (needed for pdf.js v4+ / v5+ on older Safari)
-if (typeof Promise.withResolvers === 'undefined') {
-  (Promise as any).withResolvers = function () {
-    let resolve: any, reject: any;
-    const promise = new Promise((res, rej) => {
-      resolve = res;
-      reject = rej;
-    });
-    return { promise, resolve, reject };
-  };
+// Set local worker (make sure pdf.worker.min.js is in your public/ folder)
+// Note: ES2024 polyfills are now handled in @/lib/polyfills.ts
+if (typeof window !== 'undefined' && 'Worker' in window) {
+  try {
+    pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+  } catch (e) {
+    console.error('Initial worker setup failed:', e);
+  }
 }
 
 interface PDFViewerProps {
@@ -51,16 +49,21 @@ export function PDFViewer({ url, onClose, userId, contentId, initialPage }: PDFV
 
     let version = 0;
     if (ios) {
-      const match = navigator.userAgent.match(/OS (\d+)_(\d+)/);
+      // Improved regex for iOS version detection
+      const match = navigator.userAgent.match(/(?:iPhone OS|iPad OS|OS) (\d+)_(\d+)/) ||
+        navigator.userAgent.match(/Version\/(\d+)\.(\d+)/);
       if (match) {
         version = parseInt(match[1], 10) + parseInt(match[2], 10) / 100;
       } else if (isModerniPad) {
-        version = 15; // fallback assumption
+        // Modern iPad without version in UA usually means it's running desktop-class Safari (iPadOS)
+        // Check for specific features to guestimate
+        if ('ondevicemotion' in window) version = 17.0; // guestimate for iPadOS
+        else version = 15; // fallback
       }
     }
 
     return {
-      isMobile: ios || window.innerWidth < 640,
+      isMobile: ios || window.innerWidth < 1024,
       isIOS: ios,
       iosVersion: version,
     };
@@ -79,14 +82,15 @@ export function PDFViewer({ url, onClose, userId, contentId, initialPage }: PDFV
       }
     }
 
-    const timeoutDuration = isIOS && iosVersion < 17.4 ? 7000 : 12000;
+    const timeoutDuration = isIOS && iosVersion < 17.5 ? 9000 : 18000;
 
     const timer = setTimeout(() => {
       if (isLoading && !error && !useNativeViewer) {
+        console.warn('PDF Loading Timeout reached. isIOS:', isIOS, 'version:', iosVersion);
         setError(
-          isIOS
-            ? `Limited PDF support on iOS ${iosVersion.toFixed(1)}. Try native viewer or download.`
-            : 'Loading timed out. Check connection.'
+          isIOS && iosVersion < 17.5
+            ? `iOS ${iosVersion.toFixed(1)} detected. This version has known issues with high-performance PDF rendering.`
+            : 'The document is taking longer than expected to load.'
         );
         setIsLoading(false);
       }
