@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthGuard } from "@/components/AuthGuard";
+import { Navigation } from "@/components/Navigation";
+import { GlobalErrorCatcher } from "@/components/GlobalErrorCatcher";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -30,10 +32,6 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-import { Navigation } from "@/components/Navigation";
-import { GlobalErrorCatcher } from "@/components/GlobalErrorCatcher";
-import { CapacitorProvider } from "@/components/CapacitorProvider";
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -50,16 +48,14 @@ export default function RootLayout({
         suppressHydrationWarning={true}
       >
         <GlobalErrorCatcher />
-        <CapacitorProvider>
-          <AuthGuard>
-            <div className="flex min-h-screen">
-              <Navigation />
-              <main className="flex-1 overflow-x-hidden md:pb-0 pb-24">
-                {children}
-              </main>
-            </div>
-          </AuthGuard>
-        </CapacitorProvider>
+        <AuthGuard>
+          <div className="flex min-h-screen">
+            <Navigation />
+            <main className="flex-1 overflow-x-hidden md:pb-0 pb-24">
+              {children}
+            </main>
+          </div>
+        </AuthGuard>
       </body>
     </html>
   );
