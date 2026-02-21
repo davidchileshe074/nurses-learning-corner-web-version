@@ -42,6 +42,8 @@ export default function RootLayout({
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <link rel="preconnect" href="https://cloud.appwrite.io" />
+        <link rel="dns-prefetch" href="https://cloud.appwrite.io" />
       </head>
       <body
         className={`${plusJakartaSans.variable} font-sans antialiased h-full bg-slate-50 text-slate-900`}

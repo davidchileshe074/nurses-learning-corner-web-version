@@ -395,11 +395,16 @@ export function PDFViewer({ url, onClose, userId, contentId, initialPage }: PDFV
                       onLoadSuccess={onLoadSuccess}
                       onLoadError={onLoadError}
                       loading={null}
+                      options={{
+                        cMapUrl: '/cmaps/',
+                        cMapPacked: true,
+                        standardFontDataUrl: '/standard_fonts/',
+                      }}
                       className="flex flex-col items-center"
                       error={null}
                     >
-                      {isIOS && iosVersion <= 17 ? (
-                        // Single page + navigation on iOS 17 and below
+                      {isMobile ? (
+                        // Single page + navigation on all mobile devices for performance
                         <Page
                           pageNumber={pageNumber}
                           scale={scale}
@@ -408,21 +413,20 @@ export function PDFViewer({ url, onClose, userId, contentId, initialPage }: PDFV
                           renderMode="canvas"
                           className="shadow-2xl rounded-sm overflow-hidden bg-white touch-pan-y"
                           width={safePageWidth}
-                          devicePixelRatio={isMobile ? Math.min(window.devicePixelRatio, 1.2) : window.devicePixelRatio}
+                          devicePixelRatio={isMobile ? Math.min(window.devicePixelRatio, 1.0) : window.devicePixelRatio}
                         />
                       ) : (
-                        // Multi-page scroll on newer devices
+                        // Multi-page scroll on desktop only
                         Array.from(new Array(numPages), (_, index) => (
                           <Page
                             key={index}
                             pageNumber={index + 1}
                             scale={scale}
-                            renderTextLayer={!isMobile}
-                            renderAnnotationLayer={!isMobile}
+                            renderTextLayer={true}
+                            renderAnnotationLayer={true}
                             renderMode="canvas"
-                            className="shadow-2xl mb-8 rounded-sm overflow-hidden bg-white touch-pan-y"
+                            className="shadow-2xl mb-8 rounded-sm overflow-hidden bg-white"
                             width={safePageWidth}
-                            devicePixelRatio={isMobile ? Math.min(window.devicePixelRatio, 1.2) : window.devicePixelRatio}
                           />
                         ))
                       )}

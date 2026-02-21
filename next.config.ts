@@ -29,6 +29,50 @@ const withPWA = withPWAInit({
         },
       },
       {
+        urlPattern: /\/pdf\.worker\.min\.js$/i,
+        handler: "CacheFirst",
+        options: {
+          cacheName: "pdf-worker",
+          expiration: {
+            maxEntries: 1,
+            maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+          },
+        },
+      },
+      {
+        urlPattern: /\/cmaps\/.*\.bcmap$/i,
+        handler: "CacheFirst",
+        options: {
+          cacheName: "pdf-cmaps",
+          expiration: {
+            maxEntries: 200,
+            maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+          },
+        },
+      },
+      {
+        urlPattern: /\/standard_fonts\/.*\.bcmap$/i,
+        handler: "CacheFirst",
+        options: {
+          cacheName: "pdf-standard-fonts",
+          expiration: {
+            maxEntries: 50,
+            maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+          },
+        },
+      },
+      {
+        urlPattern: /^https:\/\/cloud\.appwrite\.io\/v1\/storage\/buckets\/.*\/files\/.*\/view/i,
+        handler: "StaleWhileRevalidate",
+        options: {
+          cacheName: "appwrite-storage",
+          expiration: {
+            maxEntries: 100,
+            maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
+          },
+        },
+      },
+      {
         urlPattern: /\.(?:eot|otf|ttc|ttf|woff|woff2|font.css)$/i,
         handler: "StaleWhileRevalidate",
         options: {
